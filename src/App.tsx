@@ -1,32 +1,69 @@
+/**
+ * App.tsx
+ * 应用程序的主组件
+ * 
+ * 功能：
+ * - 管理消息状态和接收状态
+ * - 处理消息的发送和中止
+ * - 组织主要UI布局
+ * 
+ * 组件结构：
+ * - MessageList: 展示消息历史
+ * - InputArea: 处理用户输入
+ * 
+ * @author AI助手开发团队
+ * @lastModified 2025-02-15
+ */
+
 import { useState } from 'react'
 import './App.css'
-import MessageList from './components/MessageList'
-import InputArea from './components/InputArea'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: number
-}
+import { MessageList, InputArea } from './components/index'
+import { Message } from './types/interfaces'
+import { handleMessageSend } from './services/messageService'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
+  const [isReceiving, setIsReceiving] = useState(false)
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
 
-  const handleSendMessage = (content: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
+  const handleSendMessage = async (content: string) => {
+    const controller = new AbortController()
+    setAbortController(controller)
+    
+    await handleMessageSend(
       content,
-      timestamp: Date.now()
+      () => setIsReceiving(true),
+      (message) => {
+        setMessages(prev => {
+          const newMessages = prev.filter(msg => msg.id !== message.id)
+          newMessages.push(message)
+          return newMessages
+        })
+      },
+      controller.signal
+    ).finally(() => {
+      setIsReceiving(false)
+      setAbortController(null)
+    })
+  }
+
+  const handleStopReceiving = () => {
+    if (abortController) {
+      abortController.abort()
+      setIsReceiving(false)
+      setAbortController(null)
     }
-    setMessages(prev => [...prev, newMessage])
   }
 
   return (
     <div className="app">
       <MessageList messages={messages} />
-      <InputArea onSendMessage={handleSendMessage} />
+      <InputArea 
+        onSendMessage={handleSendMessage}
+        onStopReceiving={handleStopReceiving}
+        isReceiving={isReceiving}
+        maxLength={5000}
+      />
     </div>
   )
 }

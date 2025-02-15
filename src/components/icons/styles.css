@@ -1,0 +1,22 @@
+/**
+ * icons/styles.css
+ * 图标组件样式定义
+ * 
+ * 样式规范：
+ * - 统一图标尺寸: 18x18px
+ * - 使用block显示确保位置准确
+ * - 支持继承颜色属性
+ * 
+ * 使用说明：
+ * - 需要配合icon组件使用
+ * - 颜色通过currentColor继承
+ * 
+ * @author AI助手开发团队
+ * @lastModified 2025-02-15
+ */
+
+.icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}

@@ -1,13 +1,23 @@
+/**
+ * InputArea/styles.css
+ * 输入区域样式
+ * 
+ * 样式规范：
+ * - 输入框透明背景
+ * - 边框高亮效果
+ * - 按钮状态样式
+ * 
+ * @author AI助手开发团队
+ * @lastModified 2025-02-15
+ */
+
 .input-area {
-  height: 120px;
   padding: 12px;
   border: 1px solid rgba(74, 59, 137, 0.4);
   border-radius: 8px;
-  background-color: rgba(74, 59, 137, 0.08);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: border-color 0.2s;
 }
 
 .input-area:focus-within {
@@ -16,7 +26,6 @@
 }
 
 .edit-box {
-  flex: 1;
   padding: 4px 0;
   border: none;
   background: none;
@@ -36,17 +45,30 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
+.edit-box:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .toolbar {
   height: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 10px;
 }
 
 .toolbar-left {
   display: flex;
   gap: 8px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.char-count.over-limit {
+  color: #ff4d4f;
 }
 
 .toolbar-right {
@@ -69,7 +91,7 @@
   transition: all 0.2s;
 }
 
-.send-button:hover {
+.send-button:hover:not(:disabled) {
   background-color: rgba(74, 59, 137, 0.15);
   color: #9d8fe0;
 }
@@ -79,7 +101,11 @@
   cursor: not-allowed;
 }
 
-.send-button svg {
-  width: 18px;
-  height: 18px;
+.send-button.receiving {
+  color: #ff4d4f;
+}
+
+.send-button.receiving:hover {
+  background-color: rgba(255, 77, 79, 0.15);
+  color: #ff7875;
 }
