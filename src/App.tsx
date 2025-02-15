@@ -17,7 +17,7 @@
 
 import { useState } from 'react'
 import './App.css'
-import { MessageList, InputArea } from './components/index'
+import { MessageList, InputArea, Settings } from './components/index'
 import { Message } from './types/interfaces'
 import { handleMessageSend } from './services/messageService'
 
@@ -25,6 +25,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isReceiving, setIsReceiving] = useState(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleSendMessage = async (content: string) => {
     const controller = new AbortController()
@@ -55,15 +56,23 @@ function App() {
     }
   }
 
+  const handleOpenSettings = () => {
+    setShowSettings(true)
+  }
+
   return (
     <div className="app">
       <MessageList messages={messages} />
       <InputArea 
         onSendMessage={handleSendMessage}
         onStopReceiving={handleStopReceiving}
+        onOpenSettings={handleOpenSettings}
         isReceiving={isReceiving}
         maxLength={5000}
       />
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
+      )}
     </div>
   )
 }

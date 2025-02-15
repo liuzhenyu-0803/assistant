@@ -76,6 +76,31 @@
   gap: 8px;
 }
 
+.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #8b7dc7;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.icon-button:hover:not(:disabled) {
+  background-color: rgba(74, 59, 137, 0.15);
+  color: #9d8fe0;
+}
+
+.icon-button:disabled {
+  color: rgba(255, 255, 255, 0.25);
+  cursor: not-allowed;
+}
+
 .send-button {
   width: 32px;
   height: 32px;

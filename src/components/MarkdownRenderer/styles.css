@@ -1,0 +1,105 @@
+.markdown-content {
+  font-size: 16px;
+  line-height: 1.6;
+  color: inherit;
+}
+
+.markdown-content p {
+  margin: 0.5em 0;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: 1em 0 0.5em;
+  font-weight: 600;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.markdown-content a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content blockquote {
+  margin: 0.5em 0;
+  padding: 0.5em 1em;
+  border-left: 4px solid #ddd;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.code-block-wrapper {
+  margin: 1em 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #282a36;
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.code-block-header {
+  padding: 0.5em 1em;
+  background: #343746;
+  border-bottom: 1px solid #44475a;
+}
+
+.code-language {
+  font-size: 0.85em;
+  color: #bd93f9;
+  text-transform: uppercase;
+}
+
+.markdown-content pre {
+  margin: 0;
+  padding: 1em;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.markdown-content code {
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.markdown-content pre code {
+  padding: 0;
+  background: none;
+}
+
+/* 表格样式 */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 0.5em;
+  border: 1px solid #ddd;
+}
+
+.markdown-content th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+/* 图片样式 */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}

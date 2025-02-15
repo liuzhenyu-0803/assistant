@@ -16,11 +16,12 @@ import React, { useState } from 'react'
 import './styles.css'
 import { InputAreaProps } from '../../types/interfaces'
 import { cleanText, isEmptyText } from '../../utils/helpers'
-import { SendIcon, StopIcon } from '../icons'
+import { SendIcon, StopIcon, SettingsIcon } from '../icons'
 
 export const InputArea: React.FC<InputAreaProps> = ({ 
   onSendMessage, 
   onStopReceiving,
+  onOpenSettings,
   isReceiving,
   maxLength = 5000 
 }) => {
@@ -102,6 +103,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
         placeholder="按 Enter 发送，按 Shift + Enter 换行"
+        disabled={isReceiving}
       />
       <div className="toolbar">
         <div className="toolbar-left">
@@ -110,6 +112,13 @@ export const InputArea: React.FC<InputAreaProps> = ({
           </span>
         </div>
         <div className="toolbar-right">
+          <button
+            className="icon-button"
+            onClick={onOpenSettings}
+            title="系统设置"
+          >
+            <SettingsIcon width={20} height={20} />
+          </button>
           <button
             className={`send-button ${isReceiving ? 'receiving' : ''}`}
             onClick={buttonProps.onClick}

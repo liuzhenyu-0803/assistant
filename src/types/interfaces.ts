@@ -28,6 +28,7 @@ export interface Message {
 export interface InputAreaProps {
   onSendMessage: (content: string) => Promise<void>
   onStopReceiving?: () => void
+  onOpenSettings?: () => void
   isReceiving: boolean
   maxLength?: number
 }

@@ -1,0 +1,185 @@
+/**
+ * Settings/styles.css
+ * 设置弹窗样式
+ * 
+ * @author AI助手开发团队
+ * @lastModified 2025-02-15
+ */
+
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.settings-modal {
+  background: #1e1e1e;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(74, 59, 137, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.settings-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(74, 59, 137, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: #e0e0e0;
+}
+
+.settings-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 14px;
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.input-group input {
+  flex: 1;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(74, 59, 137, 0.4);
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #553c9a;
+  box-shadow: 0 0 0 2px rgba(74, 59, 137, 0.15);
+}
+
+.validate-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #553c9a;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.validate-button:hover:not(:disabled) {
+  background-color: #6d4aaf;
+}
+
+.validate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  margin-top: 8px;
+  color: #ff4d4f;
+  font-size: 14px;
+}
+
+.settings-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(74, 59, 137, 0.4);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primary-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #553c9a;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-button:hover:not(:disabled) {
+  background-color: #6d4aaf;
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  padding: 8px 16px;
+  border: 1px solid rgba(74, 59, 137, 0.4);
+  border-radius: 6px;
+  background: none;
+  color: #e0e0e0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: rgba(74, 59, 137, 0.15);
+}
