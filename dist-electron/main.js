@@ -9,10 +9,10 @@ import fs from "node:fs/promises";
 const APP_CONFIG = {
   // 窗口配置
   WINDOW: {
-    WIDTH: 1200,
-    HEIGHT: 800,
+    WIDTH: 800,
+    HEIGHT: 700,
     MIN_WIDTH: 800,
-    MIN_HEIGHT: 600
+    MIN_HEIGHT: 700
   },
   // 开发环境配置
   DEV: {
@@ -157,12 +157,12 @@ class MainApp {
   async init() {
     try {
       await app.whenReady();
-      this.setupAppEvents();
       this.setupIPC();
+      this.setupAppEvents();
       await this.createWindow();
       console.log("Application initialized successfully");
     } catch (error) {
-      console.error("Error initializing application:", error);
+      console.error("Error initializing app:", error);
       app.quit();
     }
   }

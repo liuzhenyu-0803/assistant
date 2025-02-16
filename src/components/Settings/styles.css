@@ -62,7 +62,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 12px 20px;
   color: #e1e1e9;
   background-color: #181825;
   border-top-left-radius: 12px;
@@ -70,9 +70,30 @@
 }
 
 .settings-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   margin: 0;
+  color: #e1e1e9;
+}
+
+/* 关闭按钮样式 */
+.close-button {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #8e8ea0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
   color: #e1e1e9;
 }
 
@@ -105,7 +126,7 @@
 /* 输入框和下拉框基础样式 */
 .settings-input,
 .settings-select {
-  background: #0d0d14 !important;
+  background-color: #0d0d14;
   border: 1px solid #2f2f3d;
   border-radius: 6px;
   color: #e1e1e9;
@@ -114,17 +135,16 @@
   width: 100%;
   height: 40px;
   transition: all 0.2s;
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  caret-width: 2px;
+  box-shadow: none;
+  -webkit-box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* 输入框 */
 .settings-input {
-  appearance: none !important;
-  -webkit-appearance: none !important;
+  appearance: none;
+  -webkit-appearance: none;
   background: #0d0d14 !important;
 }
 
@@ -148,6 +168,7 @@
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
+  background-color: #0d0d14;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b6b80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -156,12 +177,12 @@
 
 .settings-select:hover {
   border-color: #3f3f4d;
-  background-color: #181822;
+  background-color: #13131c;
 }
 
 .settings-select:focus {
   border-color: #4a3b89;
-  background-color: #181822;
+  background-color: #13131c;
   outline: none;
 }
 
@@ -189,25 +210,6 @@
 .save-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* 关闭按钮 */
-.close-button {
-  background: none;
-  border: none;
-  color: #6b6b80;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.close-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #e1e1e9;
 }
 
 /* 验证相关 */

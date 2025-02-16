@@ -8,10 +8,10 @@ import fs from 'node:fs/promises'
 const APP_CONFIG = {
   // 窗口配置
   WINDOW: {
-    WIDTH: 1200,
-    HEIGHT: 800,
+    WIDTH: 800,
+    HEIGHT: 700,
     MIN_WIDTH: 800,
-    MIN_HEIGHT: 600,
+    MIN_HEIGHT: 700,
   },
   // 开发环境配置
   DEV: {
@@ -196,18 +196,18 @@ class MainApp {
       // 等待应用准备就绪
       await app.whenReady()
 
+      // 设置IPC处理程序
+      this.setupIPC()
+      
       // 设置应用事件监听
       this.setupAppEvents()
-
-      // 设置 IPC 通信
-      this.setupIPC()
 
       // 创建主窗口
       await this.createWindow()
 
       console.log('Application initialized successfully')
     } catch (error) {
-      console.error('Error initializing application:', error)
+      console.error('Error initializing app:', error)
       app.quit()
     }
   }

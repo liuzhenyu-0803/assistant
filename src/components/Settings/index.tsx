@@ -27,6 +27,7 @@ interface SettingsState {
   models: Model[]
   isDirty: boolean
   isSaving: boolean
+  isLoadingModels: boolean
 }
 
 const initialState: SettingsState = {
@@ -35,7 +36,8 @@ const initialState: SettingsState = {
   model: '',
   models: [],
   isDirty: false,
-  isSaving: false
+  isSaving: false,
+  isLoadingModels: true
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
@@ -49,15 +51,21 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   // 加载配置和模型列表
   useEffect(() => {
     const loadConfig = async () => {
-      const config = configService.getConfig()
-      if (config.apiConfig) {
-        setState(prev => ({
-          ...prev,
-          apiProvider: config.apiConfig!.provider,
-          apiKey: config.apiConfig!.apiKey,
-          model: config.apiConfig!.selectedModel || '',
-          isDirty: false
-        }))
+      try {
+        // 确保配置服务已初始化
+        await configService.initialize()
+        const config = configService.getConfig()
+        if (config.apiConfig) {
+          setState(prev => ({
+            ...prev,
+            apiProvider: config.apiConfig!.provider,
+            apiKey: config.apiConfig!.apiKey,
+            model: config.apiConfig!.selectedModel || '',
+            isDirty: false
+          }))
+        }
+      } catch (error) {
+        console.error('加载配置失败:', error)
       }
     }
     loadConfig()
@@ -66,11 +74,13 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   // 当 provider 改变时获取模型列表
   useEffect(() => {
     const loadModels = async () => {
+      updateState({ isLoadingModels: true })
       try {
         const models = await getModelsList(state.apiProvider)
-        updateState({ models })
+        updateState({ models, isLoadingModels: false })
       } catch (error) {
         console.error('获取模型列表失败:', error)
+        updateState({ isLoadingModels: false })
       }
     }
     loadModels()
@@ -142,24 +152,24 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             />
           </div>
 
-          {state.models.length > 0 && (
-            <div className="settings-section">
-              <h3 className="settings-section-title">模型选择</h3>
-              <select
-                className="settings-select"
-                value={state.model}
-                onChange={(e) => updateState({ model: e.target.value })}
-                disabled={state.isSaving}
-              >
-                <option value="">请选择模型</option>
-                {state.models.map(model => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="settings-section">
+            <h3 className="settings-section-title">模型选择</h3>
+            <select
+              className="settings-select"
+              value={state.model}
+              onChange={(e) => updateState({ model: e.target.value })}
+              disabled={state.isSaving || state.isLoadingModels}
+            >
+              <option value="">
+                {state.isLoadingModels ? '加载模型列表中...' : '请选择模型'}
+              </option>
+              {state.models.map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="settings-footer">
