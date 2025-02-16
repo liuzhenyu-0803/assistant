@@ -101,15 +101,36 @@ class ConfigService {
         if (typeof apiKey !== 'string') {
           throw new Error('API Key 必须是字符串');
         }
+        
+        // 清理 API Key，移除所有空白字符
+        const cleanedApiKey = apiKey.replace(/\s+/g, '');
+        
+        // 确保 API Key 不为空
+        if (!cleanedApiKey) {
+          throw new Error('请输入 API Key');
+        }
+        
         // OpenRouter的API密钥通常以sk-或者pk-开头
-        if (provider === 'openrouter' && apiKey && !apiKey.startsWith('sk-') && !apiKey.startsWith('pk-')) {
+        if (provider === 'openrouter' && !cleanedApiKey.startsWith('sk-') && !cleanedApiKey.startsWith('pk-')) {
           throw new Error('OpenRouter API Key 格式不正确，应以 sk- 或 pk- 开头');
+        }
+
+        // 更新清理后的 API Key
+        if (config.apiConfig) {
+          config.apiConfig.apiKey = cleanedApiKey;
         }
       }
 
       // 验证 selectedModel
-      if (selectedModel !== undefined && typeof selectedModel !== 'string') {
-        throw new Error('所选模型必须是字符串');
+      if (selectedModel !== undefined) {
+        if (typeof selectedModel !== 'string') {
+          throw new Error('所选模型必须是字符串');
+        }
+        
+        // 确保选择了模型
+        if (!selectedModel.trim()) {
+          throw new Error('请选择模型');
+        }
       }
     }
   }
@@ -149,27 +170,77 @@ class ConfigService {
    * @param newConfig 新的配置
    */
   async updateConfig(newConfig: Partial<SystemConfig>) {
-    try {
-      this.validateConfig(newConfig);
+    console.log('更新配置:', newConfig)
+    
+    // 验证新配置
+    this.validateConfig(newConfig)
 
-      // 合并配置，保持现有配置的结构
-      this.config = {
-        ...this.config,
-        ...newConfig,
-        apiConfig: newConfig.apiConfig ? {
-          ...this.config.apiConfig,
-          ...newConfig.apiConfig
-        } : this.config.apiConfig
-      };
+    // 合并配置
+    this.config = {
+      ...this.config,
+      ...newConfig,
+      // 确保 apiConfig 的完整性
+      apiConfig: newConfig.apiConfig ? {
+        ...this.config.apiConfig,
+        ...newConfig.apiConfig
+      } : this.config.apiConfig
+    }
+
+    console.log('合并后的配置:', {
+      provider: this.config.apiConfig?.provider,
+      model: this.config.apiConfig?.selectedModel,
+      hasApiKey: !!this.config.apiConfig?.apiKey,
+      apiKeyLength: this.config.apiConfig?.apiKey?.length
+    })
+
+    // 保存到文件
+    await this.saveConfig()
+    
+    // 通知监听器
+    this.notifyListeners()
+  }
+
+  /**
+   * 获取当前配置
+   */
+  getConfig(): SystemConfig {
+    if (!this.initialized) {
+      console.warn('配置服务尚未初始化')
+    }
+    console.log('获取配置:', {
+      provider: this.config.apiConfig?.provider,
+      model: this.config.apiConfig?.selectedModel,
+      hasApiKey: !!this.config.apiConfig?.apiKey,
+      apiKeyLength: this.config.apiConfig?.apiKey?.length
+    })
+    return this.config
+  }
+
+  /**
+   * 保存配置到文件
+   */
+  private async saveConfig() {
+    try {
+      console.log('保存配置:', {
+        provider: this.config.apiConfig?.provider,
+        model: this.config.apiConfig?.selectedModel,
+        hasApiKey: !!this.config.apiConfig?.apiKey,
+        apiKeyLength: this.config.apiConfig?.apiKey?.length
+      })
       
-      // 保存到文件
-      await this.saveConfig();
-      // 通知配置已更新
-      this.notifyListeners();
+      const result = await window.electronAPI.writeConfig(
+        this.configPath,
+        JSON.stringify(this.config, null, 2)
+      )
+      
+      if (!result.success) {
+        throw new Error(result.error || '保存配置失败')
+      }
+      
+      console.log('配置保存成功')
     } catch (error) {
-      throw error instanceof Error 
-        ? error 
-        : new Error('配置更新失败');
+      console.error('保存配置失败:', error)
+      throw error
     }
   }
 
@@ -179,31 +250,6 @@ class ConfigService {
    */
   async updateAPIConfig(apiConfig: APIConfig) {
     await this.updateConfig({ apiConfig });
-  }
-
-  /**
-   * 获取当前配置
-   */
-  getConfig(): SystemConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * 保存配置到文件
-   */
-  private async saveConfig() {
-    try {
-      const result = await window.electronAPI.writeConfig(
-        this.configPath,
-        JSON.stringify(this.config, null, 2)
-      );
-      if (!result.success) {
-        throw new Error(result.error || '配置保存失败');
-      }
-    } catch (error) {
-      console.error('配置保存失败:', error);
-      throw error;
-    }
   }
 
   /**

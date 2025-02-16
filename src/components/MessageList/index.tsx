@@ -11,25 +11,27 @@
  * @lastModified 2025-02-16
  */
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import { Message as MessageType } from '../../types/interfaces'
 import { Message } from '../Message'
 import './styles.css'
 
 interface MessageListProps {
   messages: MessageType[]
-  isReceiving: boolean
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, isReceiving }) => {
+export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   const listRef = useRef<HTMLDivElement>(null)
 
-  // 自动滚动到底部
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
-  }, [messages])
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
   if (messages.length === 0) {
     return (

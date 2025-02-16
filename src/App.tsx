@@ -16,7 +16,7 @@
  * @lastModified 2025-02-16
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './App.css'
 import { MessageList, InputArea, Settings, Toast } from './components/index'
 import { Message } from './types/interfaces'
@@ -30,14 +30,6 @@ function App() {
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showConfigError, setShowConfigError] = useState(false)
-
-  // 在组件挂载时初始化配置
-  useEffect(() => {
-    configService.initialize().catch(error => {
-      console.error('配置初始化失败:', error)
-      setShowConfigError(true)
-    })
-  }, [])
 
   const handleSend = async (content: string) => {
     try {
@@ -150,7 +142,7 @@ function App() {
           onClose={() => setShowConfigError(false)}
         />
       )}
-      <MessageList messages={messages} isReceiving={isReceiving} />
+      <MessageList messages={messages} />
       <InputArea
         onSend={handleSend}
         onAbort={handleAbort}

@@ -240,6 +240,23 @@
   font-size: 12px;
 }
 
+/* 错误提示和提示文本 */
+.settings-error {
+  margin: 16px 0;
+  padding: 12px;
+  background-color: rgba(255, 77, 79, 0.1);
+  border: 1px solid rgba(255, 77, 79, 0.2);
+  border-radius: 6px;
+  color: #ff4d4f;
+  font-size: 13px;
+}
+
+.settings-hint {
+  margin-top: 8px;
+  color: #8e8ea0;
+  font-size: 12px;
+}
+
 /* 底部区域 */
 .settings-footer {
   padding: 12px 24px;

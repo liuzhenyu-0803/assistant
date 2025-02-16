@@ -40,20 +40,30 @@ const sendToAPI = async (
   onChunk: (chunk: string) => void,
   signal?: AbortSignal
 ): Promise<void> => {
+  // 验证配置
+  if (!config.apiKey) {
+    throw new Error('API Key 未设置')
+  }
+  if (!config.selectedModel) {
+    throw new Error('未选择模型')
+  }
+
+  console.log('发送请求的完整配置:', {
+    provider: config.provider,
+    model: config.selectedModel,
+    apiKey: config.apiKey,
+    content: content
+  })
+
   let headers: Record<string, string> = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${config.apiKey}`
   }
 
   // OpenRouter 需要额外的头部
   if (config.provider === 'openrouter') {
-    headers = {
-      'Authorization': `Bearer ${config.apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/liuzhenyu-0803/assistant',
-      'X-Title': 'AI Assistant'
-    }
-  } else {
-    headers['Authorization'] = `Bearer ${config.apiKey}`
+    headers['Referer'] = 'https://github.com/liuzhenyu-0803/assistant'
+    headers['x-title'] = 'AI Assistant'
   }
 
   const summaries = summaryService.getSummaries()
@@ -78,12 +88,14 @@ const sendToAPI = async (
   messages.push({ role: 'user', content })
 
   const body = {
-    model: config.selectedModel || 'openai/gpt-4o',  // 如果没有选择模型，使用默认的GPT-4
+    model: config.selectedModel,
     messages,
-    stream: true
+    stream: true,
+    temperature: 0.7,
+    max_tokens: 1000
   }
 
-  console.log('Sending request to OpenRouter:', {
+  console.log('发送请求的详细信息:', {
     url: config.provider === 'openrouter'
       ? 'https://openrouter.ai/api/v1/chat/completions'
       : 'https://api.openai.com/v1/chat/completions',
@@ -104,13 +116,23 @@ const sendToAPI = async (
   )
 
   if (!response.ok) {
-    const error = await response.text()
-    console.error('API request failed:', {
+    const errorText = await response.text()
+    let errorMessage: string
+    
+    try {
+      const errorJson = JSON.parse(errorText)
+      errorMessage = errorJson.error?.message || errorText
+    } catch {
+      errorMessage = errorText
+    }
+    
+    console.error('API 请求失败:', {
       status: response.status,
       statusText: response.statusText,
-      error
+      error: errorMessage
     })
-    throw new Error(`API 请求失败: ${response.status} ${error}`)
+    
+    throw new Error(`API 请求失败: ${errorMessage}`)
   }
 
   if (!response.body) {
@@ -188,7 +210,15 @@ export const sendMessage = async (
   await configService.initialize()
   const config = configService.getConfig()
   
+  console.log('当前配置:', {
+    provider: config.apiConfig?.provider,
+    model: config.apiConfig?.selectedModel,
+    hasApiKey: !!config.apiConfig?.apiKey,
+    apiKeyLength: config.apiConfig?.apiKey?.length
+  })
+  
   if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
+    console.error('配置不完整:', config.apiConfig)
     throw new Error('API 配置不完整，请先完成配置')
   }
 
@@ -202,6 +232,12 @@ export const sendMessage = async (
 
     while (retries > 0) {
       try {
+        console.log('准备发送请求，配置:', {
+          provider: config.apiConfig.provider,
+          model: config.apiConfig.selectedModel,
+          apiKeyPrefix: config.apiConfig.apiKey.substring(0, 10) + '...'
+        })
+        
         await sendToAPI(
           content, 
           config.apiConfig, 
@@ -211,7 +247,6 @@ export const sendMessage = async (
             message.timestamp = Date.now()
             message.status = 'receiving'
             console.log('收到新内容块，当前状态:', message.status)
-            // 每次收到新的内容块都通知UI更新
             onUpdate({ ...message })
           },
           signal

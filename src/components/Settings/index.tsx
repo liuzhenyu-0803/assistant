@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import './styles.css'
-import { APIConfig, APIProvider, Model } from '../../types/api'
+import { APIProvider, Model } from '../../types/api'
 import { getModelsList } from '../../services/apiService'
 import { configService } from '../../services/configService'
 
@@ -29,6 +29,7 @@ interface SettingsState {
   isDirty: boolean
   isSaving: boolean
   isLoadingModels: boolean
+  error?: string
 }
 
 const initialState: SettingsState = {
@@ -77,10 +78,13 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     const loadModels = async () => {
       updateState({ isLoadingModels: true })
       try {
-        const models = await getModelsList(state.apiProvider)
-        updateState({ models, isLoadingModels: false })
+        // 获取模型列表
+        const models = await getModelsList()
+        setState(prev => ({ ...prev, models }))
       } catch (error) {
         console.error('获取模型列表失败:', error)
+        updateState({ isLoadingModels: false })
+      } finally {
         updateState({ isLoadingModels: false })
       }
     }
@@ -112,8 +116,11 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
       onClose()
     } catch (error) {
       console.error('保存配置失败:', error)
-    } finally {
-      updateState({ isSaving: false })
+      // 显示错误信息
+      updateState({ 
+        error: error instanceof Error ? error.message : '保存配置失败',
+        isSaving: false 
+      })
     }
   }
 
@@ -151,6 +158,11 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               onChange={(e) => updateState({ apiKey: e.target.value })}
               disabled={state.isSaving}
             />
+            {state.apiProvider === 'openrouter' && (
+              <div className="settings-hint">
+                OpenRouter API Key 应以 sk- 或 pk- 开头
+              </div>
+            )}
           </div>
 
           <div className="settings-section">
@@ -171,6 +183,12 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               ))}
             </select>
           </div>
+
+          {state.error && (
+            <div className="settings-error">
+              {state.error}
+            </div>
+          )}
         </div>
 
         <div className="settings-footer">
