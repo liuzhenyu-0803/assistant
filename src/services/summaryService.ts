@@ -15,7 +15,7 @@ import { Message } from '../types/interfaces'
 import { configService } from './configService'
 
 // 最大保留的摘要数量
-const MAX_SUMMARIES = 10
+const MAX_SUMMARIES = 20
 
 // 摘要对象接口
 export interface ConversationSummary {
