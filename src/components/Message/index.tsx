@@ -23,9 +23,6 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     <div className={`message-item ${message.role}`}>
       <div className="message-content">
         {message.content || (message.status === 'receiving' && '正在思考...')}
-        {message.status === 'receiving' && message.content && (
-          <span className="typing-indicator">▋</span>
-        )}
       </div>
     </div>
   )

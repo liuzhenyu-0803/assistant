@@ -147,7 +147,11 @@ const sendToAPI = async (
 }
 
 // 发送消息并获取AI响应
-export const sendMessage = async (content: string, signal?: AbortSignal): Promise<Message> => {
+export const sendMessage = async (
+  content: string,
+  onUpdate: (message: Message) => void,
+  signal?: AbortSignal
+): Promise<Message> => {
   // 确保配置已初始化
   await configService.initialize()
   const config = configService.getConfig()
@@ -171,8 +175,9 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
           (chunk: string) => {
             fullContent += chunk
             message.content = fullContent
-            // 每次收到新的内容块都触发更新
             message.timestamp = Date.now()
+            // 每次收到新的内容块都通知UI更新
+            onUpdate({ ...message })
           },
           signal
         )
@@ -185,10 +190,12 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
     }
 
     message.status = 'success'
+    onUpdate({ ...message })
     return message
   } catch (error) {
     message.status = 'error'
     message.error = error instanceof Error ? error.message : '未知错误'
+    onUpdate({ ...message })
     throw error
   }
 }
@@ -204,8 +211,7 @@ export const handleMessageSend = async (
   onStart()
 
   try {
-    const message = await sendMessage(content, signal)
-    onMessage(message)
+    await sendMessage(content, onMessage, signal)
   } catch (error) {
     console.error('发送消息失败:', error)
     throw error

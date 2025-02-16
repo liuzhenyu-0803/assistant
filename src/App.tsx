@@ -69,15 +69,22 @@ function App() {
         },
         (message) => {
           setMessages(prev => {
-            const index = prev.findIndex(msg => msg.role === 'assistant' && msg.status === 'receiving')
-            if (index === -1) return prev
+            // 找到最后一条助手消息
+            const lastAssistantIndex = [...prev].reverse().findIndex(msg => msg.role === 'assistant')
+            if (lastAssistantIndex === -1) return prev
             
+            const actualIndex = prev.length - 1 - lastAssistantIndex
             const newMessages = [...prev]
-            newMessages[index] = {
+            newMessages[actualIndex] = {
               ...message,
-              id: newMessages[index].id // 保持原有的ID
+              id: newMessages[actualIndex].id // 保持原有的ID
             }
-            return newMessages
+            
+            // 如果消息内容发生变化，则更新消息
+            if (newMessages[actualIndex].content !== prev[actualIndex].content) {
+              return newMessages
+            }
+            return prev
           })
         },
         controller.signal
