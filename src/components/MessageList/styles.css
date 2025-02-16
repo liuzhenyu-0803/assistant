@@ -15,32 +15,13 @@
   flex: 1;
   width: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 32px;
   background: transparent;
-}
-
-/* 自定义滚动条样式 */
-.message-list::-webkit-scrollbar {
-  width: 6px;
-  margin-right: 4px;
-}
-
-.message-list::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 4px;
-}
-
-.message-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.message-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
 }
 
 .message-list.empty {

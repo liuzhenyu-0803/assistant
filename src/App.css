@@ -1,34 +1,72 @@
 /**
  * App.css
- * 应用程序全局样式
- * 
- * 样式规范：
- * - 深色主题
- * - 紫色系配色
- * - 固定边距布局
+ * 全局样式定义
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-15
+ * @lastModified 2025-02-16
  */
 
 /* 全局滚动条样式 */
-::-webkit-scrollbar {
+*::-webkit-scrollbar,
+.message-list::-webkit-scrollbar,
+.settings-content::-webkit-scrollbar,
+.message-content pre::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-track-piece,
-::-webkit-scrollbar-corner {
-  display: none;
+*::-webkit-scrollbar-track,
+.message-list::-webkit-scrollbar-track,
+.settings-content::-webkit-scrollbar-track,
+.message-content pre::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background-color: rgba(74, 59, 137, 0.4);
+*::-webkit-scrollbar-thumb,
+.message-list::-webkit-scrollbar-thumb,
+.settings-content::-webkit-scrollbar-thumb,
+.message-content pre::-webkit-scrollbar-thumb {
+  background-color: #4a4a4a;
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(74, 59, 137, 0.6);
+*::-webkit-scrollbar-thumb:hover,
+.message-list::-webkit-scrollbar-thumb:hover,
+.settings-content::-webkit-scrollbar-thumb:hover,
+.message-content pre::-webkit-scrollbar-thumb:hover {
+  background-color: #5a5a5a;
+}
+
+*::-webkit-scrollbar-corner,
+.message-list::-webkit-scrollbar-corner,
+.settings-content::-webkit-scrollbar-corner,
+.message-content pre::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 覆盖react-syntax-highlighter的滚动条样式 */
+.message-content pre > div {
+  &::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #4a4a4a !important;
+    border-radius: 4px !important;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #5a5a5a !important;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent !important;
+  }
 }
 
 body {

@@ -1,51 +1,161 @@
 /**
  * Message/styles.css
- * 消息组件样式
+ * 消息项样式
+ * 
+ * @author AI助手开发团队
+ * @lastModified 2025-02-16
  */
 
 .message-item {
   display: flex;
-  margin-bottom: 0;
-  animation: fadeIn 0.3s ease-in-out;
+  padding: 12px 20px;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .message-item.user {
+  background-color: transparent;
   justify-content: flex-end;
 }
 
 .message-item.assistant {
-  justify-content: flex-start;
+  background-color: transparent;
 }
 
 .message-content {
-  max-width: 80%;
+  max-width: 85%;
+  font-size: 16px;
+  color: #e0e0e0;
   padding: 12px 16px;
   border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
+  word-wrap: break-word;
   word-break: break-word;
+  overflow-wrap: break-word;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
 .user .message-content {
   background-color: #1a1a1a;
-  color: #ffffff;
   border: 1px solid #333;
+  box-shadow: 0 0 20px rgba(74, 59, 137, 0.1),
+              0 0 5px rgba(74, 59, 137, 0.2);
 }
 
 .assistant .message-content {
   background-color: #2a2a2a;
-  color: #ffffff;
   border: 1px solid #333;
+  box-shadow: 0 0 20px rgba(74, 59, 137, 0.1),
+              0 0 5px rgba(74, 59, 137, 0.2);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.message-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  background: linear-gradient(45deg, 
+    rgba(74, 59, 137, 0.05) 0%,
+    rgba(74, 59, 137, 0) 100%
+  );
+  pointer-events: none;
+}
+
+.user .message-content:hover,
+.assistant .message-content:hover {
+  box-shadow: 0 0 25px rgba(74, 59, 137, 0.15),
+              0 0 8px rgba(74, 59, 137, 0.25);
+}
+
+/* Markdown样式 */
+.message-content p {
+  margin: 0.5em 0;
+  white-space: pre-wrap;
+}
+
+.message-content p:first-child {
+  margin-top: 0;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-content code {
+  background-color: #1e1e2d;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.message-content pre {
+  margin: 0.8em 0;
+  border-radius: 6px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.message-content pre > div {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+.message-content ul, .message-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.message-content li {
+  margin: 0.3em 0;
+}
+
+.message-content a {
+  color: #4a3b89;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.message-content a:hover {
+  text-decoration: underline;
+}
+
+.message-content blockquote {
+  margin: 0.8em 0;
+  padding-left: 1em;
+  border-left: 3px solid #4a3b89;
+  color: #8e8ea0;
+}
+
+.message-content table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+}
+
+.message-content th, .message-content td {
+  border: 1px solid #2f2f3d;
+  padding: 0.5em;
+  text-align: left;
+  min-width: 100px;
+}
+
+.message-content th {
+  background-color: #1e1e2d;
+}
+
+.message-content img {
+  max-width: 100%;
+  border-radius: 4px;
+  height: auto;
 }
