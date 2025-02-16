@@ -36,16 +36,12 @@ class MainApp {
     // 等待窗口准备好再显示
     window.once('ready-to-show', () => {
       window.show()
-      // 在开发模式下自动打开开发者工具
-      if (APP_CONFIG.DEV.VITE_DEV_SERVER_URL) {
-        window.webContents.openDevTools()
-      }
     })
 
-    if (APP_CONFIG.DEV.VITE_DEV_SERVER_URL) {
-      await window.loadURL(APP_CONFIG.DEV.VITE_DEV_SERVER_URL)
+    if (APP_CONFIG.DEVELOPMENT.VITE_DEV_SERVER_URL) {
+      await window.loadURL(APP_CONFIG.DEVELOPMENT.VITE_DEV_SERVER_URL)
     } else {
-      await window.loadFile(APP_CONFIG.PATHS.DIST)
+      await window.loadFile(APP_CONFIG.PRODUCTION.ENTRY_FILE)
     }
   }
 
@@ -67,13 +63,11 @@ class MainApp {
     })
 
     // 添加开发者工具快捷键
-    if (APP_CONFIG.DEV.VITE_DEV_SERVER_URL) {
-      globalShortcut.register('CommandOrControl+Shift+I', () => {
-        if (this.mainWindow) {
-          this.mainWindow.webContents.toggleDevTools()
-        }
-      })
-    }
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+      if (this.mainWindow) {
+        this.mainWindow.webContents.toggleDevTools()
+      }
+    })
   }
 }
 
