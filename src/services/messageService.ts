@@ -39,24 +39,35 @@ const sendToAPI = async (
   onChunk: (chunk: string) => void,
   signal?: AbortSignal
 ): Promise<void> => {
-  const headers: Record<string, string> = {
+  let headers: Record<string, string> = {
     'Content-Type': 'application/json'
   }
 
   // OpenRouter 需要额外的头部
   if (config.provider === 'openrouter') {
-    headers['Authorization'] = `Bearer ${config.apiKey}`
-    headers['HTTP-Referer'] = window.location.origin
-    headers['X-Title'] = 'AI Assistant'
+    headers = {
+      'Authorization': `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://github.com/liuzhenyu-0803/assistant',
+      'X-Title': 'AI Assistant'
+    }
   } else {
     headers['Authorization'] = `Bearer ${config.apiKey}`
   }
 
   const body = {
-    model: config.selectedModel,
+    model: config.selectedModel || 'openai/gpt-4o',  // 如果没有选择模型，使用默认的GPT-4
     messages: [{ role: 'user', content }],
     stream: true
   }
+
+  console.log('Sending request to OpenRouter:', {
+    url: config.provider === 'openrouter'
+      ? 'https://openrouter.ai/api/v1/chat/completions'
+      : 'https://api.openai.com/v1/chat/completions',
+    headers,
+    body
+  })
 
   const response = await fetch(
     config.provider === 'openrouter'
@@ -72,6 +83,11 @@ const sendToAPI = async (
 
   if (!response.ok) {
     const error = await response.text()
+    console.error('API request failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      error
+    })
     throw new Error(`API 请求失败: ${response.status} ${error}`)
   }
 
@@ -88,22 +104,40 @@ const sendToAPI = async (
       if (done) break
 
       const chunk = decoder.decode(value)
+      console.log('Raw chunk:', chunk)  // 添加原始数据日志
+      
       const lines = chunk
         .split('\n')
-        .filter(line => line.trim() !== '' && line.trim() !== 'data: [DONE]')
+        .filter(line => line.trim() !== '')
 
       for (const line of lines) {
         try {
+          // 跳过特殊的处理消息
+          if (line.includes('OPENROUTER PROCESSING')) continue
+          if (line.trim() === 'data: [DONE]') continue
+          
           const jsonStr = line.replace(/^data: /, '').trim()
           if (!jsonStr) continue
 
+          // 添加更多的调试信息
+          console.log('Processing line:', jsonStr)
+
           const json = JSON.parse(jsonStr)
-          const content = json.choices[0]?.delta?.content
-          if (content) {
-            onChunk(content)
+          console.log('Parsed JSON:', json)
+          
+          if (json.choices && json.choices[0]) {
+            const content = json.choices[0].delta?.content || json.choices[0].text || ''
+            if (content) {
+              console.log('Extracted content:', content)
+              onChunk(content)
+            }
           }
         } catch (e) {
-          console.error('解析响应数据失败:', e)
+          console.error('解析响应数据失败:', {
+            error: e,
+            rawLine: line,
+            chunk: chunk
+          })
         }
       }
     }
@@ -114,6 +148,8 @@ const sendToAPI = async (
 
 // 发送消息并获取AI响应
 export const sendMessage = async (content: string, signal?: AbortSignal): Promise<Message> => {
+  // 确保配置已初始化
+  await configService.initialize()
   const config = configService.getConfig()
   
   if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
@@ -121,6 +157,7 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
   }
 
   const message = createMessage('', 'assistant')
+  message.status = 'receiving'
   let fullContent = ''
 
   try {
@@ -134,7 +171,8 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
           (chunk: string) => {
             fullContent += chunk
             message.content = fullContent
-            message.status = 'receiving'
+            // 每次收到新的内容块都触发更新
+            message.timestamp = Date.now()
           },
           signal
         )
@@ -146,12 +184,11 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
       }
     }
 
-    message.content = fullContent
     message.status = 'success'
     return message
   } catch (error) {
     message.status = 'error'
-    message.error = error instanceof Error ? error.message : String(error)
+    message.error = error instanceof Error ? error.message : '未知错误'
     throw error
   }
 }
@@ -163,29 +200,14 @@ export const handleMessageSend = async (
   onMessage: (message: Message) => void,
   signal?: AbortSignal
 ): Promise<void> => {
-  // 创建用户消息
-  const userMessage = createMessage(content, 'user')
-  // 创建临时的AI响应消息
-  const tempAiMessage = createMessage('正在思考中...', 'assistant')
-  
+  // 开始接收AI响应
+  onStart()
+
   try {
-    onStart()
-    // 立即显示用户消息和临时AI消息
-    onMessage({ ...userMessage, status: 'sent' })
-    onMessage({ ...tempAiMessage, status: 'sending' })
-    
-    // 等待AI响应
-    const aiResponse = await sendMessage(content, signal)
-    // 更新AI响应消息
-    onMessage({ ...aiResponse, id: tempAiMessage.id, status: 'sent' })
+    const message = await sendMessage(content, signal)
+    onMessage(message)
   } catch (error) {
-    if (!signal?.aborted) {
-      // 显示错误消息
-      onMessage({ 
-        ...tempAiMessage, 
-        content: error instanceof Error ? error.message : '发送消息时出错',
-        status: 'error'
-      })
-    }
+    console.error('发送消息失败:', error)
+    throw error
   }
 }

@@ -15,7 +15,7 @@
  * @lastModified 2025-02-16
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import { MessageList, InputArea, Settings, Toast } from './components/index'
 import { Message } from './types/interfaces'
@@ -29,10 +29,16 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showConfigError, setShowConfigError] = useState(false)
 
+  // 在组件挂载时初始化配置
+  useEffect(() => {
+    configService.initialize().catch(error => {
+      console.error('配置初始化失败:', error)
+      setShowConfigError(true)
+    })
+  }, [])
+
   const handleSend = async (content: string) => {
     try {
-      // 确保配置已初始化
-      await configService.initialize();
       const config = await configService.getConfig()
       if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
         setShowConfigError(true)
@@ -44,11 +50,33 @@ function App() {
 
       await handleMessageSend(
         content,
-        () => setIsReceiving(true),
+        () => {
+          setIsReceiving(true)
+          // 添加用户消息和AI消息
+          setMessages(prev => [...prev, {
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: content,
+            timestamp: Date.now(),
+            status: 'sent'
+          }, {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+            status: 'receiving'
+          }])
+        },
         (message) => {
           setMessages(prev => {
-            const newMessages = prev.filter(msg => msg.id !== message.id)
-            newMessages.push(message)
+            const index = prev.findIndex(msg => msg.role === 'assistant' && msg.status === 'receiving')
+            if (index === -1) return prev
+            
+            const newMessages = [...prev]
+            newMessages[index] = {
+              ...message,
+              id: newMessages[index].id // 保持原有的ID
+            }
             return newMessages
           })
         },

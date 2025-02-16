@@ -122,8 +122,8 @@ class MainApp {
   setupIPC() {
     ipcMain.handle("read-config", async (_, configPath) => {
       try {
-        const userDataPath = app.getPath("userData");
-        const fullPath = path.join(userDataPath, configPath);
+        const localAppDataPath = app.getPath("userData").replace("Roaming", "Local");
+        const fullPath = path.join(localAppDataPath, configPath);
         try {
           await fs.access(fullPath);
         } catch {
@@ -141,8 +141,9 @@ class MainApp {
     });
     ipcMain.handle("write-config", async (_, configPath, data) => {
       try {
-        const userDataPath = app.getPath("userData");
-        const fullPath = path.join(userDataPath, configPath);
+        const localAppDataPath = app.getPath("userData").replace("Roaming", "Local");
+        const fullPath = path.join(localAppDataPath, configPath);
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
         await fs.writeFile(fullPath, data, "utf-8");
         return { success: true };
       } catch (error) {

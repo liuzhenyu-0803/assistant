@@ -26,7 +26,7 @@ class ConfigService {
     apiConfig: {
       provider: 'openrouter',
       apiKey: '',
-      selectedModel: ''
+      selectedModel: 'openai/gpt-3.5-turbo'
     }
   };
 
@@ -101,8 +101,9 @@ class ConfigService {
         if (typeof apiKey !== 'string') {
           throw new Error('API Key 必须是字符串');
         }
-        if (apiKey && apiKey.length < 32) {
-          throw new Error('API Key 长度不足');
+        // OpenRouter的API密钥通常以sk-或者pk-开头
+        if (provider === 'openrouter' && apiKey && !apiKey.startsWith('sk-') && !apiKey.startsWith('pk-')) {
+          throw new Error('OpenRouter API Key 格式不正确，应以 sk- 或 pk- 开头');
         }
       }
 

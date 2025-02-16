@@ -154,8 +154,8 @@ class MainApp {
     // 处理配置文件的读写
     ipcMain.handle('read-config', async (_, configPath: string) => {
       try {
-        const userDataPath = app.getPath('userData')
-        const fullPath = path.join(userDataPath, configPath)
+        const localAppDataPath = app.getPath('userData').replace('Roaming', 'Local')
+        const fullPath = path.join(localAppDataPath, configPath)
         
         try {
           await fs.access(fullPath)
@@ -177,8 +177,12 @@ class MainApp {
 
     ipcMain.handle('write-config', async (_, configPath: string, data: string) => {
       try {
-        const userDataPath = app.getPath('userData')
-        const fullPath = path.join(userDataPath, configPath)
+        const localAppDataPath = app.getPath('userData').replace('Roaming', 'Local')
+        const fullPath = path.join(localAppDataPath, configPath)
+        
+        // 确保目录存在
+        await fs.mkdir(path.dirname(fullPath), { recursive: true })
+        
         await fs.writeFile(fullPath, data, 'utf-8')
         return { success: true }
       } catch (error) {
