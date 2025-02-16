@@ -12,43 +12,55 @@
  * - InputArea: 处理用户输入
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-15
+ * @lastModified 2025-02-16
  */
 
 import { useState } from 'react'
 import './App.css'
-import { MessageList, InputArea, Settings } from './components/index'
+import { MessageList, InputArea, Settings, Toast } from './components/index'
 import { Message } from './types/interfaces'
 import { handleMessageSend } from './services/messageService'
+import { configService } from './services/configService'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isReceiving, setIsReceiving] = useState(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showConfigError, setShowConfigError] = useState(false)
 
-  const handleSendMessage = async (content: string) => {
-    const controller = new AbortController()
-    setAbortController(controller)
-    
-    await handleMessageSend(
-      content,
-      () => setIsReceiving(true),
-      (message) => {
-        setMessages(prev => {
-          const newMessages = prev.filter(msg => msg.id !== message.id)
-          newMessages.push(message)
-          return newMessages
-        })
-      },
-      controller.signal
-    ).finally(() => {
-      setIsReceiving(false)
-      setAbortController(null)
-    })
+  const handleSend = async (content: string) => {
+    try {
+      const config = await configService.getConfig()
+      if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
+        setShowConfigError(true)
+        return
+      }
+
+      const controller = new AbortController()
+      setAbortController(controller)
+
+      await handleMessageSend(
+        content,
+        () => setIsReceiving(true),
+        (message) => {
+          setMessages(prev => {
+            const newMessages = prev.filter(msg => msg.id !== message.id)
+            newMessages.push(message)
+            return newMessages
+          })
+        },
+        controller.signal
+      ).finally(() => {
+        setIsReceiving(false)
+        setAbortController(null)
+      })
+    } catch (error) {
+      setShowConfigError(true)
+    }
   }
 
-  const handleStopReceiving = () => {
+  const handleAbort = () => {
     if (abortController) {
       abortController.abort()
       setIsReceiving(false)
@@ -56,22 +68,32 @@ function App() {
     }
   }
 
-  const handleOpenSettings = () => {
-    setShowSettings(true)
+  const handleSettingsClose = () => {
+    setShowSettings(false)
+    setShowConfigError(false)
   }
 
   return (
     <div className="app">
+      {showConfigError && (
+        <Toast 
+          message="API 配置不完整，请先完成配置" 
+          type="error"
+          onClose={() => setShowConfigError(false)}
+        />
+      )}
       <MessageList messages={messages} />
-      <InputArea 
-        onSendMessage={handleSendMessage}
-        onStopReceiving={handleStopReceiving}
-        onOpenSettings={handleOpenSettings}
+      <InputArea
+        onSend={handleSend}
+        onAbort={handleAbort}
+        onSettingsClick={() => setShowSettings(true)}
         isReceiving={isReceiving}
-        maxLength={5000}
+        placeholder="按 Enter 发送，Shift + Enter 换行"
       />
       {showSettings && (
-        <Settings onClose={() => setShowSettings(false)} />
+        <Settings 
+          onClose={handleSettingsClose}
+        />
       )}
     </div>
   )

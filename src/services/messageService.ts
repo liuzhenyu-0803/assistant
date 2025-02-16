@@ -20,6 +20,8 @@
 
 import { Message } from '../types/interfaces'
 import { generateId } from '../utils/helpers'
+import { configService } from './configService'
+import { APIConfig } from '../types/api'
 
 // 创建新消息
 export const createMessage = (content: string, role: 'user' | 'assistant' = 'user'): Message => ({
@@ -30,39 +32,82 @@ export const createMessage = (content: string, role: 'user' | 'assistant' = 'use
   status: 'sending'
 })
 
-// 模拟流式响应
-const streamResponse = async (signal?: AbortSignal): Promise<string> => {
-  const responses = [
-    '让我思考一下...',
-    '我明白你的问题了...',
-    '根据我的分析...',
-    '这是完整的回答。'
-  ]
-  
-  let result = ''
-  for (const part of responses) {
-    if (signal?.aborted) {
-      throw new Error('用户取消了接收')
-    }
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    result = part
+// 发送消息到 API
+const sendToAPI = async (
+  content: string, 
+  config: APIConfig,
+  signal?: AbortSignal
+): Promise<string> => {
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${config.apiKey}`,
+    'Content-Type': 'application/json'
   }
-  return result
+
+  // OpenRouter 需要额外的头部
+  if (config.provider === 'openrouter') {
+    headers['HTTP-Referer'] = window.location.origin
+    headers['X-Title'] = 'AI Assistant'
+  }
+
+  const body = {
+    model: config.selectedModel,
+    messages: [{ role: 'user', content }],
+    stream: true
+  }
+
+  const response = await fetch(
+    config.provider === 'openrouter'
+      ? 'https://openrouter.ai/api/v1/chat/completions'
+      : 'https://api.openai.com/v1/chat/completions',
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`API 请求失败: ${response.status} ${error}`)
+  }
+
+  const data = await response.json()
+  return data.choices[0].message.content
 }
 
 // 发送消息并获取AI响应
 export const sendMessage = async (content: string, signal?: AbortSignal): Promise<Message> => {
+  const config = configService.getConfig()
+  
+  if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
+    throw new Error('API 配置不完整，请先完成配置')
+  }
+
   try {
-    const response = await streamResponse(signal)
+    let response: string
+    let retries = 3
+
+    while (retries > 0) {
+      try {
+        response = await sendToAPI(content, config.apiConfig, signal)
+        break
+      } catch (error) {
+        retries--
+        if (retries === 0) throw error
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
+
     return {
       id: generateId(),
       role: 'assistant',
-      content: response,
+      content: response!,
       timestamp: Date.now(),
       status: 'sent'
     }
   } catch (error) {
-    if (error instanceof Error && error.message === '用户取消了接收') {
+    if (signal?.aborted) {
       return {
         id: generateId(),
         role: 'assistant',
@@ -71,6 +116,8 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
         status: 'sent'
       }
     }
+
+    // 其他错误，抛出给上层处理
     throw error
   }
 }
@@ -99,8 +146,12 @@ export const handleMessageSend = async (
     onMessage({ ...aiResponse, id: tempAiMessage.id, status: 'sent' })
   } catch (error) {
     if (!signal?.aborted) {
-      onMessage({ ...tempAiMessage, status: 'error', content: '抱歉，处理您的消息时出现错误' })
+      // 显示错误消息
+      onMessage({ 
+        ...tempAiMessage, 
+        content: error instanceof Error ? error.message : '发送消息时出错',
+        status: 'error'
+      })
     }
-    console.error('发送消息失败:', error)
   }
 }

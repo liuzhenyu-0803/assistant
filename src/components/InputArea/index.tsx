@@ -19,11 +19,13 @@ import { cleanText, isEmptyText } from '../../utils/helpers'
 import { SendIcon, StopIcon, SettingsIcon } from '../icons'
 
 export const InputArea: React.FC<InputAreaProps> = ({ 
-  onSendMessage, 
-  onStopReceiving,
-  onOpenSettings,
+  onSend, 
+  onAbort,
+  onSettingsClick,
   isReceiving,
-  maxLength = 5000 
+  maxLength = 5000,
+  disabled = false,
+  placeholder = '输入消息...'
 }) => {
   const [message, setMessage] = useState('')
 
@@ -36,97 +38,68 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
   const handleSend = async () => {
     const cleanedMessage = cleanText(message)
-    if (!isEmptyText(cleanedMessage) && !isReceiving) {
+    if (!isEmptyText(cleanedMessage) && !isReceiving && !disabled) {
       try {
         setMessage('') // 先清空内容
-        await onSendMessage(cleanedMessage)
+        await onSend(cleanedMessage)
       } catch {
         // 错误处理由父组件负责
       }
     }
   }
 
-  const handleStopReceiving = () => {
-    onStopReceiving?.()
-  }
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (isReceiving) {
-        handleStopReceiving()
-      } else {
-        handleSend()
-      }
+      handleSend()
     }
   }
 
-  const charCount = message.length
-  const isOverLimit = charCount > maxLength
-  const isEmpty = isEmptyText(message)
-
-  // 按钮状态
-  const getButtonProps = () => {
-    if (isReceiving) {
-      return {
-        onClick: handleStopReceiving,
-        disabled: false,
-        title: '停止接收',
-        icon: <StopIcon />
-      }
-    }
-    
-    if (isEmpty || isOverLimit) {
-      return {
-        onClick: handleSend,
-        disabled: true,
-        title: isEmpty ? '请输入消息' : '超出字数限制',
-        icon: <SendIcon />
-      }
-    }
-
-    return {
-      onClick: handleSend,
-      disabled: false,
-      title: '发送',
-      icon: <SendIcon />
-    }
-  }
-
-  const buttonProps = getButtonProps()
+  const isOverLimit = message.length > maxLength
 
   return (
     <div className="input-area">
       <textarea
-        className="edit-box"
         value={message}
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
-        placeholder="按 Enter 发送，按 Shift + Enter 换行"
-        disabled={isReceiving}
+        placeholder={placeholder}
+        disabled={disabled}
+        rows={3}
+        className="edit-box"
       />
       <div className="toolbar">
         <div className="toolbar-left">
           <span className={`char-count ${isOverLimit ? 'over-limit' : ''}`}>
-            {charCount}/{maxLength}
+            {message.length}/{maxLength}
           </span>
         </div>
         <div className="toolbar-right">
-          <button
+          <button 
             className="icon-button"
-            onClick={onOpenSettings}
-            title="系统设置"
+            onClick={onSettingsClick}
+            title="设置"
           >
-            <SettingsIcon width={20} height={20} />
+            <SettingsIcon />
           </button>
-          <button
-            className={`send-button ${isReceiving ? 'receiving' : ''}`}
-            onClick={buttonProps.onClick}
-            disabled={buttonProps.disabled}
-            title={buttonProps.title}
-          >
-            {buttonProps.icon}
-          </button>
+          {isReceiving ? (
+            <button 
+              className="icon-button"
+              onClick={onAbort}
+              title="停止生成"
+            >
+              <StopIcon />
+            </button>
+          ) : (
+            <button 
+              className="icon-button"
+              onClick={handleSend}
+              disabled={isEmptyText(cleanText(message)) || disabled}
+              title="发送消息"
+            >
+              <SendIcon />
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@
  * - 自动滚动
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-15
+ * @lastModified 2025-02-16
  */
 
 import React, { useEffect, useRef } from 'react'
@@ -17,9 +17,10 @@ import './styles.css'
 
 interface MessageListProps {
   messages: Message[]
+  isReceiving: boolean
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
+export const MessageList: React.FC<MessageListProps> = ({ messages, isReceiving }) => {
   const listRef = useRef<HTMLDivElement>(null)
 
   // 自动滚动到底部
@@ -43,12 +44,12 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   return (
     <div className="message-list" ref={listRef}>
       {messages.map(message => (
-        <div key={message.id} className={`message-item ${message.role} ${message.status === 'error' ? 'error' : ''}`}>
+        <div key={message.id} className={`message-item ${message.role}`}>
           <div className="message-content">
             {message.content}
           </div>
           <div className="message-time">
-            {new Date(message.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(message.timestamp).toLocaleTimeString()}
           </div>
         </div>
       ))}

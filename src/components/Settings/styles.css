@@ -1,185 +1,328 @@
 /**
  * Settings/styles.css
- * 设置弹窗样式
+ * 设置弹窗样式 - 现代暗色主题
  * 
  * @author AI助手开发团队
  * @lastModified 2025-02-15
  */
 
+/* 动画关键帧 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 遮罩层 */
 .settings-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7) !important;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
 }
 
+/* 模态框 */
 .settings-modal {
-  background: #1e1e1e;
+  background-color: #1e1e2d !important;
   border-radius: 12px;
-  width: 480px;
-  max-width: 90vw;
+  width: 90%;
+  max-width: 500px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(74, 59, 137, 0.4);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: slideIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* 头部 */
 .settings-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(74, 59, 137, 0.4);
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: #23233a !important;
 }
 
 .settings-header h2 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #e0e0e0;
+  font-size: 14px;
+  color: #ffffff !important;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .close-button {
+  margin: -4px -4px -4px 0;
   background: none;
   border: none;
-  font-size: 24px;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 18px;
+  color: #a0a0b0 !important;
   cursor: pointer;
   padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
   line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.close-button:hover {
-  color: #e0e0e0;
+.close-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }
 
+.close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 内容区 */
 .settings-content {
-  padding: 20px;
+  padding: 24px;
   overflow-y: auto;
   flex: 1;
+  color: #e1e1e9 !important;
+  background-color: #1e1e2d !important;
 }
 
 .settings-section {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
 }
 
 .settings-section h3 {
-  margin: 0 0 16px;
-  font-size: 16px;
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #a0a0b0 !important;
   font-weight: 500;
-  color: #e0e0e0;
 }
 
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
+.settings-label {
+  font-size: 13px;
+  color: #a0a0b0 !important;
   margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 14px;
+  font-weight: 500;
 }
 
-.input-group {
+.settings-section-content {
+  padding-left: 4px;
+}
+
+.settings-input-group {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  align-items: center;
 }
 
-.input-group input {
+.settings-input-group:first-child {
+  margin-top: 0;
+}
+
+.settings-input {
   flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background-color: #2b2b3f !important;
+  color: #e1e1e9 !important;
+  font-size: 13px;
 }
 
-.form-group input,
-.form-group select {
+.settings-select {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(74, 59, 137, 0.4);
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  background: #2a2a2a;
-  color: #e0e0e0;
-  font-size: 14px;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #553c9a;
-  box-shadow: 0 0 0 2px rgba(74, 59, 137, 0.15);
-}
-
-.validate-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background-color: #553c9a;
-  color: white;
-  font-size: 14px;
+  background-color: rgba(43, 43, 63, 0.5) !important;
+  color: #e1e1e9 !important;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23a0a0b0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  transition: all 0.2s ease;
 }
 
-.validate-button:hover:not(:disabled) {
-  background-color: #6d4aaf;
+.settings-select:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(43, 43, 63, 0.7) !important;
 }
 
-.validate-button:disabled {
+.settings-select:focus {
+  outline: none;
+  border-color: #4a3b89;
+  background-color: rgba(43, 43, 63, 0.8) !important;
+}
+
+.settings-select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.error-message {
-  margin-top: 8px;
-  color: #ff4d4f;
-  font-size: 14px;
+/* 在不同浏览器中统一下拉选项的样式 */
+.settings-select option {
+  background-color: #1e1e2d;
+  color: #e1e1e9;
+  padding: 8px 12px;
 }
 
-.settings-footer {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(74, 59, 137, 0.4);
+/* 移除 Firefox 的默认样式 */
+@-moz-document url-prefix() {
+  .settings-select {
+    color: #e1e1e9;
+    background-color: #1e1e2d;
+  }
+  
+  .settings-select option {
+    background-color: #1e1e2d;
+  }
+}
+
+/* 移除 IE 的默认样式 */
+.settings-select::-ms-expand {
+  display: none;
+}
+
+.settings-select option:checked {
+  background-color: #2b2b3f;
+  color: #ffffff;
+}
+
+.settings-select:last-child {
+  margin-bottom: 0;
+}
+
+/* 验证相关 */
+.validation-button {
+  height: 36px;
+  padding: 0 16px;
+  background-color: #2b2b3f !important;
+  color: #e1e1e9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.validation-button:hover:not(:disabled) {
+  background-color: #32324a !important;
+}
+
+.validation-error {
+  margin-top: 8px;
+  color: #ff4d4f !important;
+  font-size: 12px;
+}
+
+/* 按钮样式 */
+.settings-button-container {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  margin-top: 24px;
 }
 
-.primary-button {
-  padding: 8px 16px;
+.settings-button {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 13px;
+  background-color: #4a3b89 !important;
+  color: #ffffff !important;
   border: none;
   border-radius: 6px;
-  background-color: #553c9a;
-  color: white;
-  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
-.primary-button:hover:not(:disabled) {
-  background-color: #6d4aaf;
+.settings-button:hover:not(:disabled) {
+  background-color: #5a4b99 !important;
 }
 
-.primary-button:disabled {
+.settings-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.secondary-button {
-  padding: 8px 16px;
-  border: 1px solid rgba(74, 59, 137, 0.4);
-  border-radius: 6px;
-  background: none;
-  color: #e0e0e0;
-  font-size: 14px;
-  cursor: pointer;
+/* 响应式调整 */
+@media (max-width: 480px) {
+  .settings-modal {
+    width: 95%;
+  }
+  
+  .settings-header {
+    padding: 12px 20px;
+  }
+  
+  .settings-content {
+    padding: 24px 20px;
+  }
+  
+  .settings-input-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .validation-button {
+    width: 100%;
+  }
+
+  .settings-button-container {
+    margin-top: 20px;
+  }
 }
 
-.secondary-button:hover {
-  background: rgba(74, 59, 137, 0.15);
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .settings-modal {
+    background-color: #1a202c;
+  }
+
+  .settings-input {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+
+  .settings-input:hover:not(:disabled) {
+    border-color: #718096;
+  }
+
+  .settings-input:disabled {
+    background-color: #2d3748;
+    opacity: 0.5;
+  }
+
+  .validation-error {
+    color: #fc8181;
+  }
 }

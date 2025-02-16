@@ -9,7 +9,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 )
 
-// Use contextBridge
-window.ipcRenderer.on('main-process-message', (_event, message) => {
-  console.log(message)
-})
+// 移除不安全的 IPC 调用
+// 我们应该使用 window.electronAPI 来进行 IPC 通信

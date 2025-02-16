@@ -11,10 +11,20 @@
  *   - status: 消息状态(sending/sent/error)
  * - InputAreaProps: 输入区组件属性
  * - MessageListProps: 消息列表组件属性
+ * - SystemConfig: 系统配置接口
  * 
  * @author AI助手开发团队
  * @lastModified 2025-02-15
  */
+
+// 系统配置接口
+export interface SystemConfig {
+  apiConfig?: {
+    provider: 'openrouter' | 'openai'
+    apiKey: string
+    selectedModel?: string
+  }
+}
 
 export interface Message {
   id: string
@@ -26,11 +36,13 @@ export interface Message {
 
 // 输入区属性接口
 export interface InputAreaProps {
-  onSendMessage: (content: string) => Promise<void>
-  onStopReceiving?: () => void
-  onOpenSettings?: () => void
+  onSend: (content: string) => Promise<void>
+  onAbort: () => void
+  onSettingsClick: () => void
   isReceiving: boolean
   maxLength?: number
+  disabled?: boolean
+  placeholder?: string
 }
 
 // 消息列表属性接口

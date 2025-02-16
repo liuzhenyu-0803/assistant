@@ -12,12 +12,12 @@
  */
 
 .input-area {
-  padding: 12px;
-  border: 1px solid rgba(74, 59, 137, 0.4);
+  padding: 8px;
+  border: 1px solid rgba(74, 59, 137, 0.7);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .input-area:focus-within {
@@ -32,8 +32,8 @@
   color: #e0e0e0;
   resize: none;
   font-size: 14px;
-  line-height: 1.5;
-  min-height: 24px;
+  line-height: 1.6;
+  min-height: 48px;
   max-height: 200px;
 }
 
