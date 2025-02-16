@@ -110,6 +110,10 @@ function App() {
     setShowConfigError(false)
   }
 
+  const handleClearChat = () => {
+    setMessages([])
+  }
+
   return (
     <div className="app">
       {showConfigError && (
@@ -124,6 +128,7 @@ function App() {
         onSend={handleSend}
         onAbort={handleAbort}
         onSettingsClick={() => setShowSettings(true)}
+        onClearChat={handleClearChat}
         isReceiving={isReceiving}
         placeholder="按 Enter 发送，Shift + Enter 换行"
       />

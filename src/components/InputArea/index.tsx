@@ -16,12 +16,13 @@ import React, { useState } from 'react'
 import './styles.css'
 import { InputAreaProps } from '../../types/interfaces'
 import { cleanText, isEmptyText } from '../../utils/helpers'
-import { SendIcon, StopIcon, SettingsIcon } from '../icons'
+import { SendIcon, StopIcon, SettingsIcon, ClearIcon } from '../icons'
 
 export const InputArea: React.FC<InputAreaProps> = ({ 
   onSend, 
   onAbort,
   onSettingsClick,
+  onClearChat,
   isReceiving,
   maxLength = 5000,
   disabled = false,
@@ -81,6 +82,13 @@ export const InputArea: React.FC<InputAreaProps> = ({
             title="设置"
           >
             <SettingsIcon />
+          </button>
+          <button 
+            className="icon-button"
+            onClick={onClearChat}
+            title="清空会话"
+          >
+            <ClearIcon />
           </button>
           {isReceiving ? (
             <button 

@@ -11,11 +11,6 @@
  * @lastModified 2025-02-15
  */
 
-.input-container {
-  width: 100%;
-  padding: 20px 32px;
-  box-sizing: border-box;
-}
 
 .input-area {
   width: 100%;
@@ -30,6 +25,7 @@
   gap: 4px;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease-in-out;
+  margin: 0 16px;
 }
 
 .input-area:focus-within {
@@ -38,13 +34,15 @@
 }
 
 .edit-box {
-  padding: 0;
-  border: none;
-  background: none;
-  color: #e0e0e0;
+  width: 100%;
   resize: none;
-  font-size: 16px;
-  line-height: 1.6;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 0;
   min-height: 48px;
   max-height: 200px;
   caret-width: 2px;
@@ -150,16 +148,10 @@
 
 /* 响应式布局 */
 @media (max-width: 768px) {
-  .input-container {
-    padding: 10px 24px;
-  }
   .input-area {
     margin: 8px;
   }
 }
 
 @media (max-width: 480px) {
-  .input-container {
-    padding: 10px 16px;
-  }
 }
