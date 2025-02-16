@@ -9,10 +9,10 @@ import fs from "node:fs/promises";
 const APP_CONFIG = {
   // 窗口配置
   WINDOW: {
-    WIDTH: 600,
-    HEIGHT: 700,
-    MIN_WIDTH: 500,
-    MIN_HEIGHT: 700
+    WIDTH: 900,
+    HEIGHT: 800,
+    MIN_WIDTH: 700,
+    MIN_HEIGHT: 800
   },
   // 开发环境配置
   DEV: {

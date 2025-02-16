@@ -6,6 +6,7 @@
  * - 管理消息状态和接收状态
  * - 处理消息的发送和中止
  * - 组织主要UI布局
+ * - 管理对话摘要
  * 
  * 组件结构：
  * - MessageList: 展示消息历史
@@ -21,6 +22,7 @@ import { MessageList, InputArea, Settings, Toast } from './components/index'
 import { Message } from './types/interfaces'
 import { handleMessageSend } from './services/messageService'
 import { configService } from './services/configService'
+import { summaryService } from './services/summaryService'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -48,43 +50,67 @@ function App() {
       const controller = new AbortController()
       setAbortController(controller)
 
+      // 创建新的消息数组
+      const newMessages = [
+        {
+          id: `user-${Date.now()}`,
+          role: 'user' as const,
+          content,
+          timestamp: Date.now(),
+          status: 'success' as const
+        },
+        {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant' as const,
+          content: '',
+          timestamp: Date.now(),
+          status: 'receiving' as const
+        }
+      ]
+
+      // 用户发送消息时也生成摘要
+      summaryService.addSummary([...messages, newMessages[0]]).catch(console.error)
+
       await handleMessageSend(
         content,
         () => {
           setIsReceiving(true)
-          // 添加用户消息和AI消息
-          setMessages(prev => [...prev, {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: content,
-            timestamp: Date.now(),
-            status: 'sent'
-          }, {
-            id: `assistant-${Date.now()}`,
-            role: 'assistant',
-            content: '',
-            timestamp: Date.now(),
-            status: 'receiving'
-          }])
+          setMessages(prev => [...prev, ...newMessages])
         },
-        (message) => {
+        async (message) => {
           setMessages(prev => {
-            // 找到最后一条助手消息
             const lastAssistantIndex = [...prev].reverse().findIndex(msg => msg.role === 'assistant')
             if (lastAssistantIndex === -1) return prev
             
             const actualIndex = prev.length - 1 - lastAssistantIndex
             const newMessages = [...prev]
             newMessages[actualIndex] = {
-              ...message,
-              id: newMessages[actualIndex].id // 保持原有的ID
+              ...newMessages[actualIndex],  // 保留原有消息的内容
+              ...message,                   // 用新消息更新
+              id: newMessages[actualIndex].id
             }
             
-            // 如果消息内容发生变化，则更新消息
-            if (newMessages[actualIndex].content !== prev[actualIndex].content) {
-              return newMessages
+            // 如果内容或状态有变化，就更新消息
+            if (newMessages[actualIndex].content !== prev[actualIndex].content ||
+                newMessages[actualIndex].status !== prev[actualIndex].status) {
+              console.log('消息更新:', {
+                content: newMessages[actualIndex].content !== prev[actualIndex].content,
+                status: newMessages[actualIndex].status !== prev[actualIndex].status,
+                newStatus: newMessages[actualIndex].status,
+                prevStatus: prev[actualIndex].status
+              })
             }
-            return prev
+            
+            // 只在AI回复完成时生成摘要
+            if (message.status === 'success' && 
+                message.status !== prev[actualIndex].status) {
+              console.log('AI回复完成，生成摘要')
+              summaryService.addSummary(newMessages).catch(error => {
+                console.error('生成摘要失败:', error)
+              })
+            }
+            
+            return newMessages
           })
         },
         controller.signal
@@ -112,6 +138,7 @@ function App() {
 
   const handleClearChat = () => {
     setMessages([])
+    summaryService.clearSummaries()
   }
 
   return (

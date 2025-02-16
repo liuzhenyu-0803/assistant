@@ -22,6 +22,7 @@ import { Message } from '../types/interfaces'
 import { generateId } from '../utils/helpers'
 import { configService } from './configService'
 import { APIConfig } from '../types/api'
+import { summaryService } from './summaryService' // 引入summaryService
 
 // 创建新消息
 export const createMessage = (content: string, role: 'user' | 'assistant' = 'user'): Message => ({
@@ -55,9 +56,30 @@ const sendToAPI = async (
     headers['Authorization'] = `Bearer ${config.apiKey}`
   }
 
+  const summaries = summaryService.getSummaries()
+  const messages = []
+
+  // 如果有历史摘要，添加系统消息
+  if (summaries.length > 0) {
+    const systemMessage = {
+      role: 'system',
+      content: '以下是按时间顺序排列用户和你的历史对话摘要，较早的在前，较新的在后。请在回答时考虑这些上下文：\n\n' + 
+              summaries
+                .map((s, index) => `${index + 1}. [${new Date(s.timestamp).toLocaleString()}] ${s.content}`)
+                .join('\n')
+    }
+    messages.push(systemMessage)
+    console.log('添加系统消息:', systemMessage)
+  } else {
+    console.log('没有历史摘要')
+  }
+
+  // 添加用户当前消息
+  messages.push({ role: 'user', content })
+
   const body = {
     model: config.selectedModel || 'openai/gpt-4o',  // 如果没有选择模型，使用默认的GPT-4
-    messages: [{ role: 'user', content }],
+    messages,
     stream: true
   }
 
@@ -101,7 +123,10 @@ const sendToAPI = async (
   try {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        console.log('Stream完成')
+        break
+      }
 
       const chunk = decoder.decode(value)
       console.log('Raw chunk:', chunk)  // 添加原始数据日志
@@ -113,8 +138,14 @@ const sendToAPI = async (
       for (const line of lines) {
         try {
           // 跳过特殊的处理消息
-          if (line.includes('OPENROUTER PROCESSING')) continue
-          if (line.trim() === 'data: [DONE]') continue
+          if (line.includes('OPENROUTER PROCESSING')) {
+            console.log('跳过处理消息:', line)
+            continue
+          }
+          if (line.trim() === 'data: [DONE]') {
+            console.log('收到完成标记')
+            continue
+          }
           
           const jsonStr = line.replace(/^data: /, '').trim()
           if (!jsonStr) continue
@@ -142,6 +173,7 @@ const sendToAPI = async (
       }
     }
   } finally {
+    console.log('Stream结束，释放reader')
     reader.releaseLock()
   }
 }
@@ -161,6 +193,7 @@ export const sendMessage = async (
   }
 
   const message = createMessage('', 'assistant')
+  console.log('创建新消息:', message)
   message.status = 'receiving'
   let fullContent = ''
 
@@ -176,25 +209,32 @@ export const sendMessage = async (
             fullContent += chunk
             message.content = fullContent
             message.timestamp = Date.now()
+            message.status = 'receiving'
+            console.log('收到新内容块，当前状态:', message.status)
             // 每次收到新的内容块都通知UI更新
             onUpdate({ ...message })
           },
           signal
         )
+        
+        // 消息接收完成，设置状态为成功
+        message.status = 'success'
+        console.log('消息接收完成，最终状态:', message.status)
+        onUpdate({ ...message })
         break
       } catch (error) {
         retries--
+        console.log(`发送失败，剩余重试次数: ${retries}`)
         if (retries === 0) throw error
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
 
-    message.status = 'success'
-    onUpdate({ ...message })
     return message
   } catch (error) {
     message.status = 'error'
     message.error = error instanceof Error ? error.message : '未知错误'
+    console.error('消息发送失败:', message)
     onUpdate({ ...message })
     throw error
   }
