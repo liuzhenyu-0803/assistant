@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import './styles.css'
 import { APIConfig, APIProvider, Model } from '../../types/api'
 import { getModelsList } from '../../services/apiService'
@@ -116,7 +117,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     }
   }
 
-  return (
+  const content = (
     <div className="settings-overlay">
       <div className="settings-modal">
         <div className="settings-header">
@@ -184,6 +185,8 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
       </div>
     </div>
   )
+
+  return createPortal(content, document.body)
 }
 
 export default Settings
