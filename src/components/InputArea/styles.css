@@ -11,8 +11,15 @@
  * @lastModified 2025-02-15
  */
 
+.input-container {
+  width: 100%;
+  padding: 20px 32px;
+  box-sizing: border-box;
+  background-color: #1a1a1a;
+}
+
 .input-area {
-  padding: 8px;
+  padding: 12px 12px 8px 12px;
   border: 1px solid rgba(74, 59, 137, 0.7);
   border-radius: 8px;
   display: flex;
@@ -26,15 +33,16 @@
 }
 
 .edit-box {
-  padding: 4px 0;
+  padding: 0;
   border: none;
   background: none;
   color: #e0e0e0;
   resize: none;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.6;
   min-height: 48px;
   max-height: 200px;
+  caret-width: 2px;
 }
 
 .edit-box:focus {
@@ -133,4 +141,17 @@
 .send-button.receiving:hover {
   background-color: rgba(255, 77, 79, 0.15);
   color: #ff7875;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .input-container {
+    padding: 10px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .input-container {
+    padding: 10px 16px;
+  }
 }

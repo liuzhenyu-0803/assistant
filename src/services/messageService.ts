@@ -45,8 +45,9 @@ const sendToAPI = async (
 
   // OpenRouter 需要额外的头部
   if (config.provider === 'openrouter') {
-    headers['HTTP-Referer'] = window.location.origin
-    headers['X-Title'] = 'AI Assistant'
+    headers['HTTP-Referer'] = window.location.origin;
+    headers['X-Title'] = 'AI Assistant';
+    headers['X-OpenRouter-Client'] = 'AI Assistant Client';
   }
 
   const body = {

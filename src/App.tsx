@@ -82,7 +82,7 @@ function App() {
           onClose={() => setShowConfigError(false)}
         />
       )}
-      <MessageList messages={messages} />
+      <MessageList messages={messages} isReceiving={isReceiving} />
       <InputArea
         onSend={handleSend}
         onAbort={handleAbort}

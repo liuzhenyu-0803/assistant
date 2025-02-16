@@ -60,7 +60,7 @@ class MainApp {
         transparent: false,
         roundedCorners: true,
         thickFrame: true,
-        vibrancy: 'dark',
+        vibrancy: 'under-window',
       })
 
       // 添加窗口事件监听

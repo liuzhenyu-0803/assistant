@@ -12,11 +12,12 @@
  */
 
 import React, { useEffect, useRef } from 'react'
-import { Message } from '../../types/interfaces'
+import { Message as MessageType } from '../../types/interfaces'
+import { Message } from '../Message'
 import './styles.css'
 
 interface MessageListProps {
-  messages: Message[]
+  messages: MessageType[]
   isReceiving: boolean
 }
 
@@ -34,8 +35,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isReceiving 
     return (
       <div className="message-list">
         <div className="empty-message">
-          <p>你好！我是AI助手，请告诉我你的问题。</p>
-          <p>我会尽我所能帮助你。</p>
+          <p>你好，有什么可以帮你？</p>
         </div>
       </div>
     )
@@ -44,14 +44,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isReceiving 
   return (
     <div className="message-list" ref={listRef}>
       {messages.map(message => (
-        <div key={message.id} className={`message-item ${message.role}`}>
-          <div className="message-content">
-            {message.content}
-          </div>
-          <div className="message-time">
-            {new Date(message.timestamp).toLocaleTimeString()}
-          </div>
-        </div>
+        <Message key={message.id} message={message} />
       ))}
     </div>
   )
