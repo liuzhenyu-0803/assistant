@@ -31,6 +31,8 @@ function App() {
 
   const handleSend = async (content: string) => {
     try {
+      // 确保配置已初始化
+      await configService.initialize();
       const config = await configService.getConfig()
       if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
         setShowConfigError(true)

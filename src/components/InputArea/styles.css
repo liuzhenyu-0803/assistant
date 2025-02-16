@@ -15,21 +15,22 @@
   width: 100%;
   padding: 20px 32px;
   box-sizing: border-box;
-  background-color: #1a1a1a;
 }
 
 .input-area {
   padding: 12px 12px 8px 12px;
-  border: 1px solid rgba(74, 59, 137, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease-in-out;
 }
 
 .input-area:focus-within {
   border-color: #553c9a;
-  box-shadow: 0 0 0 2px rgba(74, 59, 137, 0.15);
+  box-shadow: 0 0 15px rgba(74, 59, 137, 0.3);
 }
 
 .edit-box {

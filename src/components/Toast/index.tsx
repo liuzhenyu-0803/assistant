@@ -23,7 +23,7 @@ export interface ToastProps {
 
 export const Toast: React.FC<ToastProps> = ({ 
   message,
-  type = 'error',
+  type = 'info',
   duration = 3000,
   onClose
 }) => {
@@ -36,10 +36,14 @@ export const Toast: React.FC<ToastProps> = ({
   }, [duration, onClose])
 
   return (
-    <div className={`toast ${type}`}>
-      {message}
+    <div className="toast-root">
+      <div className="toast-container">
+        <div className={`toast ${type}`}>
+          {message}
+        </div>
+      </div>
     </div>
-  )
-}
+  );
+};
 
 export default Toast

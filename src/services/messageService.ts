@@ -36,18 +36,20 @@ export const createMessage = (content: string, role: 'user' | 'assistant' = 'use
 const sendToAPI = async (
   content: string, 
   config: APIConfig,
+  onChunk: (chunk: string) => void,
   signal?: AbortSignal
-): Promise<string> => {
+): Promise<void> => {
   const headers: Record<string, string> = {
-    'Authorization': `Bearer ${config.apiKey}`,
     'Content-Type': 'application/json'
   }
 
   // OpenRouter 需要额外的头部
   if (config.provider === 'openrouter') {
-    headers['HTTP-Referer'] = window.location.origin;
-    headers['X-Title'] = 'AI Assistant';
-    headers['X-OpenRouter-Client'] = 'AI Assistant Client';
+    headers['Authorization'] = `Bearer ${config.apiKey}`
+    headers['HTTP-Referer'] = window.location.origin
+    headers['X-Title'] = 'AI Assistant'
+  } else {
+    headers['Authorization'] = `Bearer ${config.apiKey}`
   }
 
   const body = {
@@ -73,8 +75,41 @@ const sendToAPI = async (
     throw new Error(`API 请求失败: ${response.status} ${error}`)
   }
 
-  const data = await response.json()
-  return data.choices[0].message.content
+  if (!response.body) {
+    throw new Error('响应体为空')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value)
+      const lines = chunk
+        .split('\n')
+        .filter(line => line.trim() !== '' && line.trim() !== 'data: [DONE]')
+
+      for (const line of lines) {
+        try {
+          const jsonStr = line.replace(/^data: /, '').trim()
+          if (!jsonStr) continue
+
+          const json = JSON.parse(jsonStr)
+          const content = json.choices[0]?.delta?.content
+          if (content) {
+            onChunk(content)
+          }
+        } catch (e) {
+          console.error('解析响应数据失败:', e)
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
 }
 
 // 发送消息并获取AI响应
@@ -85,13 +120,24 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
     throw new Error('API 配置不完整，请先完成配置')
   }
 
+  const message = createMessage('', 'assistant')
+  let fullContent = ''
+
   try {
-    let response: string
     let retries = 3
 
     while (retries > 0) {
       try {
-        response = await sendToAPI(content, config.apiConfig, signal)
+        await sendToAPI(
+          content, 
+          config.apiConfig, 
+          (chunk: string) => {
+            fullContent += chunk
+            message.content = fullContent
+            message.status = 'receiving'
+          },
+          signal
+        )
         break
       } catch (error) {
         retries--
@@ -100,25 +146,12 @@ export const sendMessage = async (content: string, signal?: AbortSignal): Promis
       }
     }
 
-    return {
-      id: generateId(),
-      role: 'assistant',
-      content: response!,
-      timestamp: Date.now(),
-      status: 'sent'
-    }
+    message.content = fullContent
+    message.status = 'success'
+    return message
   } catch (error) {
-    if (signal?.aborted) {
-      return {
-        id: generateId(),
-        role: 'assistant',
-        content: '回答被中止',
-        timestamp: Date.now(),
-        status: 'sent'
-      }
-    }
-
-    // 其他错误，抛出给上层处理
+    message.status = 'error'
+    message.error = error instanceof Error ? error.message : String(error)
     throw error
   }
 }

@@ -8,7 +8,8 @@
  *   - role: 消息发送者角色(user/assistant)
  *   - content: 消息内容
  *   - timestamp: 发送时间戳
- *   - status: 消息状态(sending/sent/error)
+ *   - status: 消息状态(sending/receiving/success/error)
+ *   - error: 错误信息
  * - InputAreaProps: 输入区组件属性
  * - MessageListProps: 消息列表组件属性
  * - SystemConfig: 系统配置接口
@@ -31,7 +32,8 @@ export interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: number
-  status: 'sending' | 'sent' | 'error'
+  status: 'sending' | 'receiving' | 'success' | 'error'
+  error?: string
 }
 
 // 输入区属性接口

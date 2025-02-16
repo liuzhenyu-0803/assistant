@@ -33,10 +33,8 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isReceiving 
 
   if (messages.length === 0) {
     return (
-      <div className="message-list">
-        <div className="empty-message">
-          <p>你好，有什么可以帮你？</p>
-        </div>
+      <div className="message-list empty">
+        <p>你好，有什么可以帮你？</p>
       </div>
     )
   }

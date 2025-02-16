@@ -15,7 +15,7 @@ type ConfigChangeListener = (config: SystemConfig) => void;
  */
 class ConfigService {
   private config: SystemConfig = {};
-  private readonly configPath = 'config.json';
+  private readonly configPath = 'ai-assistant-config.json';
   private initialized: boolean = false;
   private listeners: Set<ConfigChangeListener> = new Set();
 
@@ -31,7 +31,10 @@ class ConfigService {
   };
 
   constructor() {
-    // 构造函数中不再直接调用 loadConfig
+    // 构造函数中主动调用初始化
+    this.initialize().catch(error => {
+      console.error('配置初始化失败:', error);
+    });
   }
 
   /**
@@ -67,6 +70,8 @@ class ConfigService {
             ...(loadedConfig.apiConfig || {})
           }
         };
+      } else {
+        throw new Error(result.error || '配置加载失败');
       }
     } catch (error) {
       console.error('配置加载失败:', error);
@@ -74,7 +79,6 @@ class ConfigService {
       this.config = { ...this.defaultConfig };
       // 保存默认配置
       await this.saveConfig();
-      throw new Error('配置加载失败，已使用默认配置');
     }
   }
 
@@ -188,13 +192,16 @@ class ConfigService {
    */
   private async saveConfig() {
     try {
-      await window.electronAPI.writeConfig(
-        this.configPath, 
+      const result = await window.electronAPI.writeConfig(
+        this.configPath,
         JSON.stringify(this.config, null, 2)
       );
+      if (!result.success) {
+        throw new Error(result.error || '配置保存失败');
+      }
     } catch (error) {
       console.error('配置保存失败:', error);
-      throw new Error('配置保存失败，请检查文件权限');
+      throw error;
     }
   }
 

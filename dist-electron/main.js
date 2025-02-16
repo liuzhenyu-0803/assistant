@@ -9,9 +9,9 @@ import fs from "node:fs/promises";
 const APP_CONFIG = {
   // 窗口配置
   WINDOW: {
-    WIDTH: 800,
+    WIDTH: 600,
     HEIGHT: 700,
-    MIN_WIDTH: 800,
+    MIN_WIDTH: 500,
     MIN_HEIGHT: 700
   },
   // 开发环境配置
@@ -49,7 +49,7 @@ class MainApp {
         },
         show: false,
         autoHideMenuBar: true,
-        backgroundColor: "#000000",
+        backgroundColor: "#1e1f2b",
         transparent: false,
         roundedCorners: true,
         thickFrame: true,
