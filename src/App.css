@@ -92,7 +92,10 @@ body {
   position: relative;
 }
 
-.app > * {
+/* 只限制主要内容区域的宽度，排除 Toast */
+.app > .message-list,
+.app > .input-area,
+.app > .settings {
   width: 100%;
   max-width: 800px;
 }

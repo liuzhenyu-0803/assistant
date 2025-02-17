@@ -1,31 +1,26 @@
 /**
  * App.tsx
- * 应用程序的主组件，负责整体状态管理和UI组织
+ * 应用程序的主组件
  * 
  * 功能：
  * 1. 状态管理
- *    - messages: 管理对话消息列表
- *    - isReceiving: 控制消息接收状态
- *    - abortController: 用于中止消息接收
- *    - isSettingsVisible: 控制设置面板显示
- *    - isConfigErrorVisible: 控制配置错误提示
+ *    - messages: 对话消息列表
+ *    - isReceiving: 消息接收状态
+ *    - abortController: 消息接收中止控制器
+ *    - isSettingsVisible: 设置面板显示状态
+ *    - isConfigErrorVisible: 配置错误提示状态
  * 
  * 2. 消息处理
- *    - 发送消息并实时更新UI
- *    - 支持中止正在接收的消息
+ *    - 发送和接收消息
+ *    - 支持中止消息接收
  *    - 自动生成对话摘要
  *    - 错误处理和状态反馈
  * 
  * 3. 组件结构
- *    - MessageList: 展示消息历史记录
- *    - InputArea: 处理用户输入和消息发送
- *    - Settings: 管理API配置
- *    - Toast: 显示错误提示
- * 
- * 4. 服务集成
- *    - messageService: 处理消息发送和接收
- *    - configService: 管理API配置
- *    - summaryService: 处理对话摘要生成
+ *    - MessageList: 消息历史列表
+ *    - InputArea: 用户输入区域
+ *    - Settings: API配置面板
+ *    - Toast: 错误提示组件
  * 
  * @author AI助手开发团队
  * @lastModified 2025-02-17
@@ -39,25 +34,37 @@ import { handleMessageSend } from './services/messageService'
 import { configService } from './services/configService'
 import { summaryService } from './services/summaryService'
 
+/**
+ * 主应用组件
+ * 负责管理应用状态和组织UI结构
+ */
 function App() {
+  // 状态定义
   const [messages, setMessages] = useState<Message[]>([])
   const [isReceiving, setIsReceiving] = useState(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [isSettingsVisible, setSettingsVisible] = useState(false)
   const [isConfigErrorVisible, setConfigErrorVisible] = useState(false)
 
+  /**
+   * 处理消息发送
+   * 包含：验证配置、发送消息、更新UI、生成摘要
+   * @param content 消息内容
+   */
   const handleSendMessage = async (content: string) => {
     try {
+      // 验证API配置
       const config = await configService.getConfig()
       if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
         setConfigErrorVisible(true)
         return
       }
 
+      // 创建中止控制器
       const controller = new AbortController()
       setAbortController(controller)
 
-      // 创建新的消息数组
+      // 构建新消息
       const newMessages = [
         {
           id: `user-${Date.now()}`,
@@ -75,15 +82,18 @@ function App() {
         }
       ]
 
-      // 用户发送消息时也生成摘要
+      // 为用户消息生成摘要
       summaryService.addSummary([...messages, newMessages[0]]).catch(console.error)
 
+      // 发送消息并处理响应
       await handleMessageSend(
         content,
+        // 开始接收消息的回调
         () => {
           setIsReceiving(true)
           setMessages(prev => [...prev, ...newMessages])
         },
+        // 消息更新的回调
         async (message) => {
           setMessages(prev => {
             const lastAssistantIndex = prev.findLastIndex(msg => msg.role === 'assistant')
@@ -95,15 +105,14 @@ function App() {
               id: newMessages[lastAssistantIndex].id
             }
             
-            // 在消息完成或出错时重置状态
+            // 重置接收状态
             if (message.status === 'success' || message.status === 'error') {
               setIsReceiving(false)
               setAbortController(null)
             }
             
-            // 只在AI回复完成时生成摘要
+            // 生成AI回复的摘要
             if (message.status === 'success') {
-              console.log('AI回复完成，生成摘要')
               summaryService.addSummary(newMessages).catch(error => {
                 console.error('生成摘要失败:', error)
               })
@@ -116,12 +125,15 @@ function App() {
       )
     } catch (error) {
       console.error('发送消息失败:', error)
-      // 在错误时也需要重置状态
       setIsReceiving(false)
       setAbortController(null)
     }
   }
 
+  /**
+   * 中止消息接收
+   * 取消正在进行的API请求
+   */
   const handleAbortMessageReceiving = () => {
     if (abortController) {
       abortController.abort()
@@ -130,11 +142,19 @@ function App() {
     }
   }
 
+  /**
+   * 关闭设置面板
+   * 同时清除配置错误提示
+   */
   const handleCloseSettings = () => {
     setSettingsVisible(false)
     setConfigErrorVisible(false)
   }
 
+  /**
+   * 清空所有消息
+   * 同时清除对话摘要
+   */
   const handleClearMessages = () => {
     setMessages([])
     summaryService.clearSummaries()
@@ -142,6 +162,7 @@ function App() {
 
   return (
     <div className="app">
+      {/* 配置错误提示 */}
       {isConfigErrorVisible && (
         <Toast 
           message="API 配置不完整，请先完成配置" 
@@ -149,7 +170,11 @@ function App() {
           onClose={() => setConfigErrorVisible(false)}
         />
       )}
+      
+      {/* 消息列表 */}
       <MessageList messages={messages} />
+      
+      {/* 输入区域 */}
       <InputArea
         onSendMessage={handleSendMessage}
         onAbortMessageReceiving={handleAbortMessageReceiving}
@@ -157,6 +182,8 @@ function App() {
         onClearMessages={handleClearMessages}
         isReceiving={isReceiving}
       />
+      
+      {/* 设置面板 */}
       {isSettingsVisible && (
         <Settings 
           onClose={handleCloseSettings}
