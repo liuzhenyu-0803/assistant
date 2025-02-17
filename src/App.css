@@ -2,100 +2,156 @@
  * App.css
  * 全局样式定义
  * 
- * @author AI助手开发团队
- * @lastModified 2025-02-16
+ * 本文件定义了应用程序的全局样式和布局结构。
+ * 采用现代CSS最佳实践，包括：
+ * 1. 使用flex布局实现全屏自适应
+ * 2. 避免使用视口单位(vh/vw)防止移动端问题
+ * 3. 统一字体和颜色系统
+ * 4. 优化性能和可访问性
+ * 
+ * 布局原则：
+ * - 使用flex布局替代传统定位
+ * - 避免固定高度，使用flex:1自动填充
+ * - 确保布局在各种设备上稳定
  */
 
-/* 全局滚动条样式 */
-*::-webkit-scrollbar,
-.message-list::-webkit-scrollbar,
-.settings-content::-webkit-scrollbar,
-.message-content pre::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track,
-.message-list::-webkit-scrollbar-track,
-.settings-content::-webkit-scrollbar-track,
-.message-content pre::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb,
-.message-list::-webkit-scrollbar-thumb,
-.settings-content::-webkit-scrollbar-thumb,
-.message-content pre::-webkit-scrollbar-thumb {
-  background-color: #4a4a4a;
-  border-radius: 4px;
-}
-
-*::-webkit-scrollbar-thumb:hover,
-.message-list::-webkit-scrollbar-thumb:hover,
-.settings-content::-webkit-scrollbar-thumb:hover,
-.message-content pre::-webkit-scrollbar-thumb:hover {
-  background-color: #5a5a5a;
-}
-
-*::-webkit-scrollbar-corner,
-.message-list::-webkit-scrollbar-corner,
-.settings-content::-webkit-scrollbar-corner,
-.message-content pre::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* 覆盖react-syntax-highlighter的滚动条样式 */
-.message-content pre > div {
-  &::-webkit-scrollbar {
-    width: 8px !important;
-    height: 8px !important;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent !important;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: #4a4a4a !important;
-    border-radius: 4px !important;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background-color: #5a5a5a !important;
-  }
-
-  &::-webkit-scrollbar-corner {
-    background: transparent !important;
-  }
-}
-
-body {
-  margin: 0;
-  color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
-
-.app {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* 重置基础样式
+ * 1. 使用border-box简化盒模型计算
+ * 2. 清除默认边距，统一起点
+ * 3. 包括伪元素一起重置，保持一致性
+ */
+*, *::before, *::after {
   box-sizing: border-box;
-  padding: 16px;
   margin: 0;
-  align-items: center;
-  overflow: hidden;
-  gap: 16px;
-  position: relative;
+  padding: 0;
 }
 
-/* 只限制主要内容区域的宽度，排除 Toast */
+/* 根元素设置
+ * 1. 设置基础字体大小为16px，方便后续使用rem单位
+ * 2. 启用平滑滚动，提升用户体验
+ * 3. 作为整个应用的配置中心
+ */
+:root {
+  font-size: 16px;          /* 基础字体大小，方便rem计算 */
+  scroll-behavior: smooth;   /* 页面内跳转平滑滚动 */
+}
+
+/* HTML元素设置
+ * 1. 设置高度100%，作为后续元素的计算基准
+ * 2. 禁用iOS设备上的字体大小自动调整
+ * 3. 不使用100vh，避免移动端兼容性问题
+ */
+html {
+  height: 100%;                    /* 基准高度，子元素可以基于此计算 */
+  -webkit-text-size-adjust: none;  /* 禁用移动端字体缩放 */
+}
+
+/* Body元素设置
+ * 1. 使用flex布局，方便内容居中和空间分配
+ * 2. 继承html高度，保证基础布局
+ * 3. 设置合理的行高和字体平滑
+ * 4. 使用系统默认字体栈，优化性能
+ */
+body {
+  min-height: 100%;         /* 最小高度继承html */
+  margin: 0;
+  padding: 0;
+  color: #e0e0e0;          /* 浅色文本，适合深色背景 */
+  background-color: #1a1a1a; /* 深色背景，减少眼疲劳 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;  /* 系统字体优先 */
+  line-height: 1.5;         /* 适合阅读的行高 */
+  -webkit-font-smoothing: antialiased;  /* 字体平滑，提升清晰度 */
+  display: flex;            /* 启用flex布局 */
+  flex-direction: column;   /* 垂直方向排列 */
+}
+
+/* 主应用容器
+ * 1. 使用flex:1自动占满剩余空间
+ * 2. 保持宽度100%避免溢出
+ * 3. 垂直方向布局，方便组织内容
+ * 4. 使用padding创建内边距，而不是margin
+ */
+.app {
+  flex: 1;                 /* 自动占满剩余空间 */
+  display: flex;           /* 继续使用flex布局 */
+  flex-direction: column;  /* 垂直排列子元素 */
+  width: 100%;            /* 占满容器宽度 */
+  padding: 16px;          /* 统一内边距 */
+  margin: 0;              /* 清除外边距 */
+}
+
+/* 内容区域宽度限制
+ * 限制主要内容最大宽度为800px，确保在大屏幕上的良好阅读体验
+ * 排除Toast组件，允许其占据更大宽度
+ */
 .app > .message-list,
 .app > .input-area,
 .app > .settings {
   width: 100%;
   max-width: 800px;
+}
+
+/* 表单元素样式继承
+ * 1. 表单元素默认不继承字体设置：
+ *    - 浏览器默认使用系统字体
+ *    - 不同浏览器有自己的默认样式
+ *    - 这是历史遗留的行为
+ * 2. 强制继承父元素的字体：
+ *    - 确保设计的一致性
+ *    - 覆盖浏览器默认样式
+ */
+input, button, textarea, select {
+  font: inherit;    /* 强制继承父元素的字体设置，覆盖浏览器默认样式 */
+}
+
+/* 滚动条样式定制
+ * 使用WebKit特定的伪元素来自定义滚动条样式
+ * 注意：这些样式仅在WebKit内核的浏览器（如Chrome、Safari）中生效
+ * 
+ * 滚动条组成部分：
+ * ::-webkit-scrollbar      - 整个滚动条
+ * ::-webkit-scrollbar-thumb  - 可拖动的滑块
+ * ::-webkit-scrollbar-track  - 滚动条轨道（背景）
+ * ::-webkit-scrollbar-corner - 滚动条交叉区域
+ */
+
+/* 整个滚动条 */
+*::-webkit-scrollbar {
+  width: 8px !important;    /* 垂直滚动条的宽度 */
+  height: 8px !important;   /* 水平滚动条的高度 */
+}
+
+/* 滚动条轨道（背景） */
+*::-webkit-scrollbar-track {
+  background: transparent !important;  /* 透明背景减少视觉干扰 */
+}
+
+/* 滚动条滑块 */
+*::-webkit-scrollbar-thumb {
+  background-color: #4a4a4a !important;  /* 深灰色滑块，与暗色主题协调 */
+  border-radius: 4px !important;         /* 圆角效果提升视觉体验 */
+}
+
+/* 滑块悬停效果 */
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #5a5a5a !important;  /* 悬停时轻微提亮，提供交互反馈 */
+}
+
+/* 滚动条交叉区域 */
+*::-webkit-scrollbar-corner {
+  background: transparent !important;  /* 保持交叉区域透明 */
+}
+
+/* 媒体元素默认样式
+ * 1. 将默认的inline元素改为inline-block：
+ *    - 避免行内元素的基线对齐导致的底部间隙
+ *    - 可以设置宽高和margin/padding
+ *    - 保持与其他元素共处一行的能力
+ * 2. 限制最大宽度，防止溢出容器
+ * 3. 设置垂直对齐，确保与文本对齐一致
+ */
+img, picture, video, canvas, svg {
+  display: inline-block;  /* 改变默认的inline显示模式，既解决对齐问题，又保持内联特性 */
+  max-width: 100%;       /* 确保媒体元素不会溢出容器，支持响应式设计 */
+  vertical-align: middle; /* 统一垂直对齐方式，避免意外的对齐问题 */
 }
