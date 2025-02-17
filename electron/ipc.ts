@@ -12,21 +12,21 @@ export class IPCHandler {
    * 初始化所有IPC处理程序
    */
   public static init(): void {
-    IPCHandler.setupConfigHandlers()
+    IPCHandler.registerConfigHandlers()
     console.log('IPC handlers initialized')
   }
 
   /**
-   * 设置配置文件相关的处理程序
+   * 注册配置文件相关的处理程序
    */
-  private static setupConfigHandlers(): void {
+  private static registerConfigHandlers(): void {
     // 读取配置
-    ipcMain.handle('read-config', async (_, configPath: string) => {
+    ipcMain.handle('config:read', async (_, configPath: string) => {
       try {
         const fullPath = IPCHandler.getConfigPath(configPath)
         console.log('Reading config from:', fullPath)
         
-        await IPCHandler.ensureConfigFile(fullPath)
+        await IPCHandler.initializeConfigFile(fullPath)
         const data = await fs.readFile(fullPath, 'utf-8')
         console.log('Config data read:', data)
         
@@ -41,7 +41,7 @@ export class IPCHandler {
     })
 
     // 写入配置
-    ipcMain.handle('write-config', async (_, configPath: string, data: string) => {
+    ipcMain.handle('config:write', async (_, configPath: string, data: string) => {
       try {
         const fullPath = IPCHandler.getConfigPath(configPath)
         console.log('Writing config to:', fullPath)
@@ -87,7 +87,7 @@ export class IPCHandler {
   /**
    * 确保配置文件存在，如果不存在则创建
    */
-  private static async ensureConfigFile(fullPath: string): Promise<void> {
+  private static async initializeConfigFile(fullPath: string): Promise<void> {
     try {
       // 确保目录存在
       await fs.mkdir(path.dirname(fullPath), { recursive: true })

@@ -38,10 +38,10 @@ export interface Message {
 
 // 输入区属性接口
 export interface InputAreaProps {
-  onSend: (message: string) => Promise<void>
-  onAbort: () => void
-  onSettingsClick: () => void
-  onClearChat: () => void
+  onSendMessage: (message: string) => Promise<void>
+  onAbortMessageReceiving: () => void
+  onOpenSettings: () => void
+  onClearMessages: () => void
   isReceiving: boolean
   maxLength?: number
   disabled?: boolean

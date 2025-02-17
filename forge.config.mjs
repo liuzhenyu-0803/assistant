@@ -4,7 +4,7 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 export default {
   packagerConfig: {
     asar: true,
-    icon: './resources/icons/assistant',
+    icon: './resources/icons/logo.ico',
     executableName: 'AI助手',
     win32metadata: {
       CompanyName: 'Liu Zhenyu',

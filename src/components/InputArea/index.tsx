@@ -19,14 +19,14 @@ import { cleanText, isEmptyText } from '../../utils/helpers'
 import { SendIcon, StopIcon, SettingsIcon, ClearIcon } from '../icons'
 
 export const InputArea: React.FC<InputAreaProps> = ({ 
-  onSend, 
-  onAbort,
-  onSettingsClick,
-  onClearChat,
+  onSendMessage, 
+  onAbortMessageReceiving,
+  onOpenSettings,
+  onClearMessages,
   isReceiving,
   maxLength = 5000,
   disabled = false,
-  placeholder = '输入消息...'
+  placeholder = '按 Enter 发送，Shift + Enter 换行'
 }) => {
   const [message, setMessage] = useState('')
 
@@ -42,7 +42,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
     if (!isEmptyText(cleanedMessage) && !isReceiving && !disabled) {
       try {
         setMessage('') // 先清空内容
-        await onSend(cleanedMessage)
+        await onSendMessage(cleanedMessage)
       } catch {
         // 错误处理由父组件负责
       }
@@ -78,14 +78,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <div className="toolbar-right">
           <button 
             className="icon-button"
-            onClick={onSettingsClick}
+            onClick={onOpenSettings}
             title="设置"
           >
             <SettingsIcon />
           </button>
           <button 
             className="icon-button"
-            onClick={onClearChat}
+            onClick={onClearMessages}
             title="清空会话"
           >
             <ClearIcon />
@@ -93,7 +93,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
           {isReceiving ? (
             <button 
               className="icon-button"
-              onClick={onAbort}
+              onClick={onAbortMessageReceiving}
               title="停止生成"
             >
               <StopIcon />

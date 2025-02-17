@@ -1,19 +1,34 @@
 /**
  * App.tsx
- * 应用程序的主组件
+ * 应用程序的主组件，负责整体状态管理和UI组织
  * 
  * 功能：
- * - 管理消息状态和接收状态
- * - 处理消息的发送和中止
- * - 组织主要UI布局
- * - 管理对话摘要
+ * 1. 状态管理
+ *    - messages: 管理对话消息列表
+ *    - isReceiving: 控制消息接收状态
+ *    - abortController: 用于中止消息接收
+ *    - isSettingsVisible: 控制设置面板显示
+ *    - isConfigErrorVisible: 控制配置错误提示
  * 
- * 组件结构：
- * - MessageList: 展示消息历史
- * - InputArea: 处理用户输入
+ * 2. 消息处理
+ *    - 发送消息并实时更新UI
+ *    - 支持中止正在接收的消息
+ *    - 自动生成对话摘要
+ *    - 错误处理和状态反馈
+ * 
+ * 3. 组件结构
+ *    - MessageList: 展示消息历史记录
+ *    - InputArea: 处理用户输入和消息发送
+ *    - Settings: 管理API配置
+ *    - Toast: 显示错误提示
+ * 
+ * 4. 服务集成
+ *    - messageService: 处理消息发送和接收
+ *    - configService: 管理API配置
+ *    - summaryService: 处理对话摘要生成
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-16
+ * @lastModified 2025-02-17
  */
 
 import { useState } from 'react'
@@ -28,14 +43,14 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isReceiving, setIsReceiving] = useState(false)
   const [abortController, setAbortController] = useState<AbortController | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showConfigError, setShowConfigError] = useState(false)
+  const [isSettingsVisible, setSettingsVisible] = useState(false)
+  const [isConfigErrorVisible, setConfigErrorVisible] = useState(false)
 
-  const handleSend = async (content: string) => {
+  const handleSendMessage = async (content: string) => {
     try {
       const config = await configService.getConfig()
       if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
-        setShowConfigError(true)
+        setConfigErrorVisible(true)
         return
       }
 
@@ -71,31 +86,23 @@ function App() {
         },
         async (message) => {
           setMessages(prev => {
-            const lastAssistantIndex = [...prev].reverse().findIndex(msg => msg.role === 'assistant')
+            const lastAssistantIndex = prev.findLastIndex(msg => msg.role === 'assistant')
             if (lastAssistantIndex === -1) return prev
             
-            const actualIndex = prev.length - 1 - lastAssistantIndex
             const newMessages = [...prev]
-            newMessages[actualIndex] = {
-              ...newMessages[actualIndex],  // 保留原有消息的内容
-              ...message,                   // 用新消息更新
-              id: newMessages[actualIndex].id
+            newMessages[lastAssistantIndex] = {
+              ...message,
+              id: newMessages[lastAssistantIndex].id
             }
             
-            // 如果内容或状态有变化，就更新消息
-            if (newMessages[actualIndex].content !== prev[actualIndex].content ||
-                newMessages[actualIndex].status !== prev[actualIndex].status) {
-              console.log('消息更新:', {
-                content: newMessages[actualIndex].content !== prev[actualIndex].content,
-                status: newMessages[actualIndex].status !== prev[actualIndex].status,
-                newStatus: newMessages[actualIndex].status,
-                prevStatus: prev[actualIndex].status
-              })
+            // 在消息完成或出错时重置状态
+            if (message.status === 'success' || message.status === 'error') {
+              setIsReceiving(false)
+              setAbortController(null)
             }
             
             // 只在AI回复完成时生成摘要
-            if (message.status === 'success' && 
-                message.status !== prev[actualIndex].status) {
+            if (message.status === 'success') {
               console.log('AI回复完成，生成摘要')
               summaryService.addSummary(newMessages).catch(error => {
                 console.error('生成摘要失败:', error)
@@ -106,16 +113,16 @@ function App() {
           })
         },
         controller.signal
-      ).finally(() => {
-        setIsReceiving(false)
-        setAbortController(null)
-      })
+      )
     } catch (error) {
-      setShowConfigError(true)
+      console.error('发送消息失败:', error)
+      // 在错误时也需要重置状态
+      setIsReceiving(false)
+      setAbortController(null)
     }
   }
 
-  const handleAbort = () => {
+  const handleAbortMessageReceiving = () => {
     if (abortController) {
       abortController.abort()
       setIsReceiving(false)
@@ -123,37 +130,36 @@ function App() {
     }
   }
 
-  const handleSettingsClose = () => {
-    setShowSettings(false)
-    setShowConfigError(false)
+  const handleCloseSettings = () => {
+    setSettingsVisible(false)
+    setConfigErrorVisible(false)
   }
 
-  const handleClearChat = () => {
+  const handleClearMessages = () => {
     setMessages([])
     summaryService.clearSummaries()
   }
 
   return (
     <div className="app">
-      {showConfigError && (
+      {isConfigErrorVisible && (
         <Toast 
           message="API 配置不完整，请先完成配置" 
           type="error"
-          onClose={() => setShowConfigError(false)}
+          onClose={() => setConfigErrorVisible(false)}
         />
       )}
       <MessageList messages={messages} />
       <InputArea
-        onSend={handleSend}
-        onAbort={handleAbort}
-        onSettingsClick={() => setShowSettings(true)}
-        onClearChat={handleClearChat}
+        onSendMessage={handleSendMessage}
+        onAbortMessageReceiving={handleAbortMessageReceiving}
+        onOpenSettings={() => setSettingsVisible(true)}
+        onClearMessages={handleClearMessages}
         isReceiving={isReceiving}
-        placeholder="按 Enter 发送，Shift + Enter 换行"
       />
-      {showSettings && (
+      {isSettingsVisible && (
         <Settings 
-          onClose={handleSettingsClose}
+          onClose={handleCloseSettings}
         />
       )}
     </div>
