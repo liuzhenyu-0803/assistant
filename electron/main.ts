@@ -32,10 +32,9 @@ class MainApp {
   public async init(): Promise<void> {
     try {
       await app.whenReady()
-      await this.createWindow()
-
       this.registerApplicationEvents()
       IPCHandler.init()
+      await this.createWindow()
     } catch (error) {
       console.error('Failed to initialize application:', error)
       app.quit()

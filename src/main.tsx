@@ -8,6 +8,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>,
 )
-
-// 移除不安全的 IPC 调用
-// 我们应该使用 window.electronAPI 来进行 IPC 通信

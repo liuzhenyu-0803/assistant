@@ -1,90 +1,15 @@
-/**
- * MessageList/styles.css
- * 消息列表样式
- * 
- * 样式规范：
- * - 消息气泡贴边显示
- * - 用户消息靠右对齐
- * - AI消息靠左对齐
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-15
- */
-
 .message-list {
   flex: 1;
-  width: 100%;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 32px;
-  background: transparent;
 }
 
 .message-list.empty {
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 22.5px;
+  font-size: 23px;
   font-weight: 600;
-}
-
-.message-list.empty p {
-  margin: 0;
-}
-
-.message-time {
-  font-size: 12px;
-  color: #666;
-  align-self: flex-end;
-  padding: 0 8px;
-}
-
-/* 加载指示器样式 */
-.loading-indicator {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-}
-
-.loading-indicator span {
-  animation: loading 1.4s infinite;
-  font-size: 24px;
-  line-height: 24px;
-  color: #666;
-}
-
-.loading-indicator span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.loading-indicator span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes loading {
-  0%, 100% {
-    opacity: 0.2;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-4px);
-  }
-}
-
-/* 响应式布局 */
-@media (max-width: 768px) {
-  .message-list {
-    padding: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  .message-list {
-    padding: 0;
-  }
 }
