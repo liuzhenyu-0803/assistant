@@ -49,7 +49,7 @@
   /* 过渡动画：所有属性 0.2秒 */
   transition: all 0.2s ease-in-out;
   /* 左右外边距 */
-  margin: 0 16px;
+  /* margin: 0 16px; */
 }
 
 /* 输入区聚焦状态 */
@@ -60,7 +60,7 @@
 
 /* 文本编辑框 */
 .edit-box {
-  width: 100%;
+  /* width: 100%; */
   resize: none;  /* 禁用手动调整大小 */
   border: none;
   outline: none;
@@ -71,8 +71,8 @@
   padding: 0;
   /* 高度限制 */
   min-height: 48px;  /* 至少显示3行 */
-  max-height: 200px;
-  caret-width: 2px;  /* 光标宽度 */
+  /* max-height: 200px; */
+  /* caret-width: 2px;  光标宽度 */
 }
 
 /* 编辑框聚焦状态 */

@@ -39,21 +39,23 @@ import { SendIcon, StopIcon, SettingsIcon, ClearIcon } from '../icons'
  * @param {Function} onAbortMessageReceiving - 中止消息接收的回调函数
  * @param {Function} onOpenSettings - 打开设置面板的回调函数
  * @param {Function} onClearMessages - 清空所有消息的回调函数
+ * @param {boolean} isWaiting - 是否正在等待 AI 响应
  * @param {boolean} isReceiving - 是否正在接收消息
  * @param {number} maxLength - 最大允许字数，默认5000
  * @param {boolean} disabled - 是否禁用输入区
  * @param {string} placeholder - 输入框占位文本
  */
-export const InputArea: React.FC<InputAreaProps> = ({ 
+function InputArea({ 
   onSendMessage, 
   onAbortMessageReceiving,
   onOpenSettings,
   onClearMessages,
+  isWaiting,
   isReceiving,
   maxLength = 5000,
   disabled = false,
   placeholder = '按 Enter 发送，Shift + Enter 换行'
-}) => {
+}: InputAreaProps) {
   // 消息内容状态
   const [message, setMessage] = useState('')
 
@@ -78,7 +80,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
    */
   const handleSend = async () => {
     const cleanedMessage = cleanText(message)
-    if (!isEmptyText(cleanedMessage) && !isReceiving && !disabled) {
+    if (!isEmptyText(cleanedMessage) && !isWaiting && !isReceiving && !disabled) {
       try {
         setMessage('') // 先清空内容，提供更好的用户体验
         await onSendMessage(cleanedMessage)
@@ -111,8 +113,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
         value={message}
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={disabled}
+        placeholder={isWaiting ? '正在等待 AI 响应...' : placeholder}
+        disabled={isWaiting || disabled}
         rows={3}
         className="edit-box"
       />
@@ -142,8 +144,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
           >
             <ClearIcon />
           </button>
-          {/* 停止/发送按钮（根据接收状态切换） */}
-          {isReceiving ? (
+          {/* 停止/发送按钮（根据状态切换） */}
+          {(isWaiting || isReceiving) ? (
             <button 
               className="icon-button"
               onClick={onAbortMessageReceiving}
@@ -152,11 +154,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
               <StopIcon />
             </button>
           ) : (
-            <button
+            <button 
               className="icon-button"
               onClick={handleSend}
-              disabled={isEmptyText(message) || disabled}
-              title="发送消息"
+              title="发送"
+              disabled={isWaiting}
             >
               <SendIcon />
             </button>

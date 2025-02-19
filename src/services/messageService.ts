@@ -19,14 +19,13 @@
  */
 
 import { Message } from '../types/interfaces'
-import { generateId } from '../utils/helpers'
 import { configService } from './configService'
 import { APIConfig } from '../types/api'
 import { summaryService } from './summaryService' // 引入summaryService
 
 // 创建新消息
 export const createMessage = (content: string, role: 'user' | 'assistant' = 'user'): Message => ({
-  id: generateId(),
+  id: crypto.randomUUID(),
   role,
   content,
   timestamp: Date.now(),
@@ -210,13 +209,6 @@ export const sendMessage = async (
   await configService.initialize()
   const config = configService.getConfig()
   
-  console.log('当前配置:', {
-    provider: config.apiConfig?.provider,
-    model: config.apiConfig?.selectedModel,
-    hasApiKey: !!config.apiConfig?.apiKey,
-    apiKeyLength: config.apiConfig?.apiKey?.length
-  })
-  
   if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
     console.error('配置不完整:', config.apiConfig)
     throw new Error('API 配置不完整，请先完成配置')
@@ -232,12 +224,6 @@ export const sendMessage = async (
 
     while (retries > 0) {
       try {
-        console.log('准备发送请求，配置:', {
-          provider: config.apiConfig.provider,
-          model: config.apiConfig.selectedModel,
-          apiKeyPrefix: config.apiConfig.apiKey.substring(0, 10) + '...'
-        })
-        
         await sendToAPI(
           content, 
           config.apiConfig, 
@@ -246,21 +232,29 @@ export const sendMessage = async (
             message.content = fullContent
             message.timestamp = Date.now()
             message.status = 'receiving'
-            console.log('收到新内容块，当前状态:', message.status)
             onUpdate({ ...message })
           },
           signal
         )
         
-        // 消息接收完成，设置状态为成功
         message.status = 'success'
-        console.log('消息接收完成，最终状态:', message.status)
         onUpdate({ ...message })
         break
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          message.status = 'aborted'
+          message.content = fullContent || '消息生成已终止'
+          onUpdate({ ...message })
+          return message
+        }
+        
         retries--
-        console.log(`发送失败，剩余重试次数: ${retries}`)
-        if (retries === 0) throw error
+        if (retries === 0) {
+          message.status = 'error'
+          message.error = '发送消息失败'
+          onUpdate({ ...message })
+          return message
+        }
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
@@ -269,7 +263,6 @@ export const sendMessage = async (
   } catch (error) {
     message.status = 'error'
     message.error = error instanceof Error ? error.message : '未知错误'
-    console.error('消息发送失败:', message)
     onUpdate({ ...message })
     throw error
   }
@@ -278,17 +271,17 @@ export const sendMessage = async (
 // 处理消息发送流程
 export const handleMessageSend = async (
   content: string,
-  onStart: () => void,
   onMessage: (message: Message) => void,
   signal?: AbortSignal
 ): Promise<void> => {
-  // 开始接收AI响应
-  onStart()
-
-  try {
-    await sendMessage(content, onMessage, signal)
-  } catch (error) {
-    console.error('发送消息失败:', error)
-    throw error
-  }
+  await sendMessage(
+    content,
+    (message) => {
+      if (message.status === 'error') {
+        throw new Error(message.error || '消息发送失败')
+      }
+      onMessage(message)
+    },
+    signal
+  )
 }

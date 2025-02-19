@@ -1,192 +1,171 @@
-/**
- * App.tsx
- * 应用程序的主组件
- * 
- * 功能：
- * 1. 状态管理
- *    - messages: 对话消息列表
- *    - isReceiving: 消息接收状态
- *    - abortController: 消息接收中止控制器
- *    - isSettingsVisible: 设置面板显示状态
- *    - isConfigErrorVisible: 配置错误提示状态
- * 
- * 2. 消息处理
- *    - 发送和接收消息
- *    - 支持中止消息接收
- *    - 自动生成对话摘要
- *    - 错误处理和状态反馈
- * 
- * 3. 组件结构
- *    - MessageList: 消息历史列表
- *    - InputArea: 用户输入区域
- *    - Settings: API配置面板
- *    - Toast: 错误提示组件
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-17
- */
-
-import { useState } from 'react'
-import './App.css'
+import { useState, useEffect } from 'react'
+import { Message, ToastData, MessageStatus } from './types/interfaces'
 import { MessageList, InputArea, Settings, Toast } from './components/index'
-import { Message } from './types/interfaces'
-import { handleMessageSend } from './services/messageService'
+import { handleMessageSend, createMessage } from './services/messageService'
 import { configService } from './services/configService'
 import { summaryService } from './services/summaryService'
+import './App.css'
 
-/**
- * 主应用组件
- * 负责管理应用状态和组织UI结构
- */
+const UNKNOWN_ERROR = '未知错误'
+
+// 应用程序主组件
 function App() {
-  // 状态定义
   const [messages, setMessages] = useState<Message[]>([])
-  const [isReceiving, setIsReceiving] = useState(false)
-  const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const [messageStatus, setMessageStatus] = useState<MessageStatus>('idle')
+  const [messageController, setMessageController] = useState<AbortController | null>(null)
   const [isSettingsVisible, setSettingsVisible] = useState(false)
-  const [isConfigErrorVisible, setConfigErrorVisible] = useState(false)
+  const [toastData, setToastData] = useState<ToastData | null>(null)
 
-  /**
-   * 处理消息发送
-   * 包含：验证配置、发送消息、更新UI、生成摘要
-   * @param content 消息内容
-   */
-  const handleSendMessage = async (content: string) => {
+  // 组件卸载时中止正在进行的请求
+  useEffect(() => {
+    return () => {
+      if (messageController) {
+        messageController.abort()
+      }
+    }
+  }, [])
+
+  // 监听消息变化，处理摘要生成
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1]
+      if (lastMessage.role === 'assistant' && lastMessage.status === 'success') {
+        generateSummary(messages)
+      }
+    }
+  }, [messages])
+
+  // 更新消息列表中最后一条助手消息
+  const updateLastMessage = (messages: Message[], lastMessage: Partial<Message>) => {
+    const lastIndex = messages.findLastIndex(msg => msg.role === 'assistant')
+    if (lastIndex === -1) return messages
+    const messageList = [...messages]
+    messageList[lastIndex] = { ...messageList[lastIndex], ...lastMessage }
+    return messageList
+  }
+
+  // 显示提示信息
+  const showToast = (message: string, type: ToastData['type'] = 'error') => {
+    setToastData({ message, type })
+  }
+
+  // 打开设置面板
+  const openSettings = () => setSettingsVisible(true)
+  
+  // 关闭设置面板
+  const closeSettings = () => setSettingsVisible(false)
+
+  // 清空对话历史
+  const clearConversation = () => {
+    setMessages([])
+    summaryService.clearSummaries()
+  }
+
+  // 生成对话摘要
+  const generateSummary = async (messages: Message[]) => {
     try {
-      // 验证API配置
+      await summaryService.addSummary(messages)
+    } catch (error) {
+      console.error('生成对话摘要失败:', error)
+      showToast(`生成对话摘要失败: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`)
+    }
+  }
+
+  // 中止消息生成
+  const abortMessageGeneration = () => {
+    if (messageController) {
+      messageController.abort()
+      
+      if (messageStatus === 'waiting') {
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1]
+          if (lastMessage?.role === 'assistant' && !lastMessage.content) {
+            return prev.slice(0, -1)
+          }
+          return prev
+        })
+        setMessageController(null)
+        setMessageStatus('idle')
+      }
+    }
+  }
+
+  // 发送消息并处理响应
+  const sendMessage = async (message: string) => {
+    try {
       const config = await configService.getConfig()
       if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
-        setConfigErrorVisible(true)
+        showToast('API 配置不完整，请先完成配置')
         return
       }
 
-      // 创建中止控制器
       const controller = new AbortController()
-      setAbortController(controller)
+      setMessageController(controller)
+      setMessageStatus('waiting')
 
-      // 构建新消息
       const newMessages = [
-        {
-          id: `user-${Date.now()}`,
-          role: 'user' as const,
-          content,
-          timestamp: Date.now(),
-          status: 'success' as const
-        },
-        {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant' as const,
-          content: '',
-          timestamp: Date.now(),
-          status: 'receiving' as const
-        }
+        createMessage(message, 'user'),
+        createMessage('', 'assistant')
       ]
+      setMessages([...messages, ...newMessages])
 
-      // 为用户消息生成摘要
-      summaryService.addSummary([...messages, newMessages[0]]).catch(console.error)
-
-      // 发送消息并处理响应
       await handleMessageSend(
-        content,
-        // 开始接收消息的回调
-        () => {
-          setIsReceiving(true)
-          setMessages(prev => [...prev, ...newMessages])
-        },
-        // 消息更新的回调
-        async (message) => {
-          setMessages(prev => {
-            const lastAssistantIndex = prev.findLastIndex(msg => msg.role === 'assistant')
-            if (lastAssistantIndex === -1) return prev
-            
-            const newMessages = [...prev]
-            newMessages[lastAssistantIndex] = {
-              ...message,
-              id: newMessages[lastAssistantIndex].id
-            }
-            
-            // 重置接收状态
-            if (message.status === 'success' || message.status === 'error') {
-              setIsReceiving(false)
-              setAbortController(null)
-            }
-            
-            // 生成AI回复的摘要
-            if (message.status === 'success') {
-              summaryService.addSummary(newMessages).catch(error => {
-                console.error('生成摘要失败:', error)
-              })
-            }
-            
-            return newMessages
-          })
+        message,
+        (message) => {
+          if (messageStatus === 'waiting') {
+            setMessageStatus('receiving')
+          }
+          
+          setMessages(prev => updateLastMessage(prev, {
+            ...message,
+            id: prev[prev.length - 1].id
+          }))
+          
+          if (message.status === 'success' || message.status === 'aborted') {
+            setMessageController(null)
+            setMessageStatus('idle')
+          }
         },
         controller.signal
       )
     } catch (error) {
       console.error('发送消息失败:', error)
-      setIsReceiving(false)
-      setAbortController(null)
+      setMessageController(null)
+      setMessageStatus('idle')
+      
+      setMessages(prev => updateLastMessage(prev, {
+        status: 'error',
+        error: error instanceof Error ? error.message : UNKNOWN_ERROR
+      }))
+      
+      showToast(`发送消息失败: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`)
     }
-  }
-
-  /**
-   * 中止消息接收
-   * 取消正在进行的API请求
-   */
-  const handleAbortMessageReceiving = () => {
-    if (abortController) {
-      abortController.abort()
-      setIsReceiving(false)
-      setAbortController(null)
-    }
-  }
-
-  /**
-   * 关闭设置面板
-   * 同时清除配置错误提示
-   */
-  const handleCloseSettings = () => {
-    setSettingsVisible(false)
-    setConfigErrorVisible(false)
-  }
-
-  /**
-   * 清空所有消息
-   * 同时清除对话摘要
-   */
-  const handleClearMessages = () => {
-    setMessages([])
-    summaryService.clearSummaries()
   }
 
   return (
     <div className="app">
-      {/* 配置错误提示 */}
-      {isConfigErrorVisible && (
+      {toastData && (
         <Toast 
-          message="API 配置不完整，请先完成配置" 
-          type="error"
-          onClose={() => setConfigErrorVisible(false)}
+          message={toastData.message}
+          type={toastData.type}
+          onHide={() => setToastData(null)}
         />
       )}
       
-      {/* 消息列表 */}
       <MessageList messages={messages} />
       
-      {/* 输入区域 */}
       <InputArea
-        onSendMessage={handleSendMessage}
-        onAbortMessageReceiving={handleAbortMessageReceiving}
-        onOpenSettings={() => setSettingsVisible(true)}
-        onClearMessages={handleClearMessages}
-        isReceiving={isReceiving}
+        onSendMessage={sendMessage}
+        onAbortMessageReceiving={abortMessageGeneration}
+        onOpenSettings={openSettings}
+        onClearMessages={clearConversation}
+        isWaiting={messageStatus === 'waiting'}
+        isReceiving={messageStatus === 'receiving'}
       />
-      
-      {/* 设置面板 */}
+
       {isSettingsVisible && (
         <Settings 
-          onClose={handleCloseSettings}
+          onClose={closeSettings}
         />
       )}
     </div>

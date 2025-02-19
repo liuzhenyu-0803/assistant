@@ -8,11 +8,12 @@
  *   - role: 消息发送者角色(user/assistant)
  *   - content: 消息内容
  *   - timestamp: 发送时间戳
- *   - status: 消息状态(sending/receiving/success/error)
+ *   - status: 消息状态(sending/receiving/success/error/aborted)
  *   - error: 错误信息
  * - InputAreaProps: 输入区组件属性
  * - MessageListProps: 消息列表组件属性
  * - SystemConfig: 系统配置接口
+ * - ToastData: Toast 数据接口
  * 
  * @author AI助手开发团队
  * @lastModified 2025-02-15
@@ -32,9 +33,12 @@ export interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: number
-  status: 'sending' | 'receiving' | 'success' | 'error'
+  status: 'sending' | 'receiving' | 'success' | 'error' | 'aborted'
   error?: string
 }
+
+// 消息状态类型定义
+export type MessageStatus = 'idle' | 'waiting' | 'receiving'
 
 // 输入区属性接口
 export interface InputAreaProps {
@@ -42,7 +46,8 @@ export interface InputAreaProps {
   onAbortMessageReceiving: () => void
   onOpenSettings: () => void
   onClearMessages: () => void
-  isReceiving: boolean
+  isWaiting: boolean     // 是否正在等待 AI 首次响应
+  isReceiving: boolean   // 是否正在接收 AI 响应流
   maxLength?: number
   disabled?: boolean
   placeholder?: string
@@ -51,4 +56,10 @@ export interface InputAreaProps {
 // 消息列表属性接口
 export interface MessageListProps {
   messages: Message[]
+}
+
+// Toast 数据接口
+export interface ToastData {
+  message: string
+  type: 'error' | 'info' | 'success'
 }

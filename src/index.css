@@ -30,6 +30,7 @@ body {
 /* 布局容器 */
 #root {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
