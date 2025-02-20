@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Message, ToastData, MessageStatus } from './types/interfaces'
 import { MessageList, InputArea, Settings, Toast } from './components/index'
 import { handleMessageSend, createMessage } from './services/messageService'
-import { configService } from './services/configService'
 import { summaryService } from './services/summaryService'
 import './App.css'
 
@@ -11,7 +10,7 @@ const UNKNOWN_ERROR = '未知错误'
 // 应用程序主组件
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
-  const [messageStatus, setMessageStatus] = useState<MessageStatus>('idle')
+  const [chatStatus, setChatStatus] = useState<MessageStatus>('idle')
   const [messageController, setMessageController] = useState<AbortController | null>(null)
   const [isSettingsVisible, setSettingsVisible] = useState(false)
   const [toastData, setToastData] = useState<ToastData | null>(null)
@@ -34,15 +33,6 @@ function App() {
       }
     }
   }, [messages])
-
-  // 更新消息列表中最后一条助手消息
-  const updateLastMessage = (messages: Message[], lastMessage: Partial<Message>) => {
-    const lastIndex = messages.findLastIndex(msg => msg.role === 'assistant')
-    if (lastIndex === -1) return messages
-    const messageList = [...messages]
-    messageList[lastIndex] = { ...messageList[lastIndex], ...lastMessage }
-    return messageList
-  }
 
   // 显示提示信息
   const showToast = (message: string, type: ToastData['type'] = 'error') => {
@@ -76,70 +66,75 @@ function App() {
     if (messageController) {
       messageController.abort()
       
-      if (messageStatus === 'waiting') {
+      if (chatStatus === 'sending') {
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1]
-          if (lastMessage?.role === 'assistant' && !lastMessage.content) {
-            return prev.slice(0, -1)
+          if (lastMessage?.role === 'assistant') {
+            const newMessages = [...prev]
+            newMessages[newMessages.length - 1] = {
+              ...lastMessage,
+              status: 'aborted',
+              content: lastMessage.content + '\n\n[用户取消了请求]'
+            }
+            return newMessages
           }
           return prev
         })
         setMessageController(null)
-        setMessageStatus('idle')
+        setChatStatus('idle')
       }
     }
   }
 
-  // 发送消息并处理响应
-  const sendMessage = async (message: string) => {
-    try {
-      const config = await configService.getConfig()
-      if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
-        showToast('API 配置不完整，请先完成配置')
-        return
-      }
-
-      const controller = new AbortController()
-      setMessageController(controller)
-      setMessageStatus('waiting')
-
-      const newMessages = [
-        createMessage(message, 'user'),
-        createMessage('', 'assistant')
-      ]
-      setMessages([...messages, ...newMessages])
-
-      await handleMessageSend(
-        message,
-        (message) => {
-          if (messageStatus === 'waiting') {
-            setMessageStatus('receiving')
+  // 处理消息发送
+  const sendMessage = async (content: string) => {
+    setChatStatus('sending')
+    
+    // 创建用户消息和助手消息
+    const userMessage = createMessage(content, 'user')
+    const assistantMessage = createMessage('', 'assistant')
+    
+    // 添加消息到列表
+    setMessages(prev => [...prev, userMessage, assistantMessage])
+    
+    await handleMessageSend(
+      content,
+      (message) => {
+        setMessages(prev => {
+          const index = prev.findIndex(m => m.id === assistantMessage.id)
+          if (index === -1) {
+            return prev
           }
-          
-          setMessages(prev => updateLastMessage(prev, {
+          const newMessages = [...prev]
+          newMessages[index] = {
             ...message,
-            id: prev[prev.length - 1].id
-          }))
-          
-          if (message.status === 'success' || message.status === 'aborted') {
-            setMessageController(null)
-            setMessageStatus('idle')
+            id: assistantMessage.id,
+            timestamp: assistantMessage.timestamp
           }
-        },
-        controller.signal
-      )
-    } catch (error) {
-      console.error('发送消息失败:', error)
-      setMessageController(null)
-      setMessageStatus('idle')
-      
-      setMessages(prev => updateLastMessage(prev, {
-        status: 'error',
-        error: error instanceof Error ? error.message : UNKNOWN_ERROR
-      }))
-      
-      showToast(`发送消息失败: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`)
-    }
+
+          // 如果是取消状态，添加提示信息
+          if (message.status === 'aborted') {
+            newMessages[index] = {
+              ...newMessages[index],
+              content: message.content + '\n\n[用户取消了请求]'
+            }
+          }
+
+          return newMessages
+        })
+        
+        // 更新全局对话状态
+        setChatStatus(message.status === 'receiving' ? 'receiving' : 'idle')
+        
+        // 如果发生错误，显示错误提示
+        if (message.status === 'error' && message.error) {
+          setToastData({
+            message: message.error,
+            type: 'error'
+          })
+        }
+      }
+    )
   }
 
   return (
@@ -159,8 +154,8 @@ function App() {
         onAbortMessageReceiving={abortMessageGeneration}
         onOpenSettings={openSettings}
         onClearMessages={clearConversation}
-        isWaiting={messageStatus === 'waiting'}
-        isReceiving={messageStatus === 'receiving'}
+        isWaiting={chatStatus === 'sending'}
+        isReceiving={chatStatus === 'receiving'}
       />
 
       {isSettingsVisible && (

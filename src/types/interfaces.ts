@@ -38,7 +38,7 @@ export interface Message {
 }
 
 // 消息状态类型定义
-export type MessageStatus = 'idle' | 'waiting' | 'receiving'
+export type MessageStatus = 'idle' | 'sending' | 'receiving' | 'success' | 'error' | 'aborted'
 
 // 输入区属性接口
 export interface InputAreaProps {
