@@ -38,7 +38,7 @@ const sendToAPI = async (
   config: APIConfig,
   onChunk: (chunk: string) => void,
   signal?: AbortSignal
-): Promise<void> => {
+): Promise<{ aborted?: boolean } | void> => {
   // 验证配置
   if (!config.apiKey) {
     throw new Error('API Key 未设置')
@@ -197,6 +197,10 @@ const sendToAPI = async (
     console.log('Stream结束，释放reader')
     reader.releaseLock()
   }
+
+  if (signal?.aborted) {
+    return { aborted: true }
+  }
 }
 
 // 发送消息并获取AI响应
@@ -216,7 +220,7 @@ export const sendMessage = async (
 
     while (retries > 0) {
       try {
-        await sendToAPI(
+        const result = await sendToAPI(
           content, 
           config.apiConfig!, 
           (chunk: string) => {
@@ -228,34 +232,38 @@ export const sendMessage = async (
           },
           signal
         )
-        
-        message.status = 'success'
-        onUpdate({ ...message })
-        return
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
+
+        if (result?.aborted) {
+          console.log('用户中止消息生成')
           message.status = 'aborted'
           message.content = fullContent || '消息生成已终止'
           onUpdate({ ...message })
           return
         }
         
-        retries--
-        if (retries === 0) {
-          message.status = 'error'
-          message.error = '发送消息失败'
+        message.status = 'success'
+        onUpdate({ ...message })
+        return
+      } catch (error) {
+        // 处理中止信号
+        if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
+          console.log('捕获到中止信号')
+          message.status = 'aborted'
+          message.content = fullContent || '消息生成已终止'
           onUpdate({ ...message })
           return
+        }
+
+        // 真正的错误处理
+        retries--
+        if (retries === 0) {
+          throw new Error('发送消息失败')
         }
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
-
-    return
   } catch (error) {
-    message.status = 'error'
-    message.error = error instanceof Error ? error.message : '未知错误'
-    onUpdate({ ...message })
+    // 这里处理其他意外错误
     throw error
   }
 }
