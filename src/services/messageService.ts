@@ -204,16 +204,8 @@ export const sendMessage = async (
   content: string,
   onUpdate: (message: Message) => void,
   signal?: AbortSignal
-): Promise<Message> => {
-  // 确保配置已初始化
-  await configService.initialize()
+): Promise<void> => {
   const config = configService.getConfig()
-  
-  if (!config.apiConfig?.apiKey || !config.apiConfig?.selectedModel) {
-    console.error('配置不完整:', config.apiConfig)
-    throw new Error('API 配置不完整，请先完成配置')
-  }
-
   const message = createMessage('', 'assistant')
   console.log('创建新消息:', message)
   message.status = 'receiving'
@@ -226,7 +218,7 @@ export const sendMessage = async (
       try {
         await sendToAPI(
           content, 
-          config.apiConfig, 
+          config.apiConfig!, 
           (chunk: string) => {
             fullContent += chunk
             message.content = fullContent
@@ -239,13 +231,13 @@ export const sendMessage = async (
         
         message.status = 'success'
         onUpdate({ ...message })
-        break
+        return
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           message.status = 'aborted'
           message.content = fullContent || '消息生成已终止'
           onUpdate({ ...message })
-          return message
+          return
         }
         
         retries--
@@ -253,13 +245,13 @@ export const sendMessage = async (
           message.status = 'error'
           message.error = '发送消息失败'
           onUpdate({ ...message })
-          return message
+          return
         }
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
     }
 
-    return message
+    return
   } catch (error) {
     message.status = 'error'
     message.error = error instanceof Error ? error.message : '未知错误'
