@@ -1,15 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Message as MessageType } from '../../types/interfaces'
+import { Message as MessageType, MessageListProps } from '../../types'
 import { Message } from '../Message'
 import './styles.css'
-
-/**
- * MessageList 组件的属性接口
- * @property {MessageType[]} messages - 消息数组，包含所有需要展示的对话消息
- */
-interface MessageListProps {
-  messages: MessageType[]
-}
 
 /**
  * MessageList 组件

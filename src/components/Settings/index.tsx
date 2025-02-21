@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import './styles.css'
-import { APIProvider, Model } from '../../types/api'
+import { APIProvider, Model, APIConfig } from '../../types'
 import { getModelsList } from '../../services/apiService'
 import { configService } from '../../services/configService'
 
@@ -54,8 +54,6 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        // 确保配置服务已初始化
-        await configService.initialize()
         const config = configService.getConfig()
         if (config.apiConfig) {
           setState(prev => ({
@@ -105,11 +103,9 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     
     try {
       await configService.updateConfig({
-        apiConfig: {
-          provider: state.apiProvider,
-          apiKey: state.apiKey.trim(),
-          selectedModel: state.model
-        }
+        provider: state.apiProvider,
+        apiKey: state.apiKey.trim(),
+        selectedModel: state.model
       })
       
       updateState({ isDirty: false })

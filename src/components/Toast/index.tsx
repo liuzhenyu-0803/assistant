@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
+import { ToastData } from '../../types'
 import './styles.css'
 
-export interface ToastProps {
-  message: string    // 提示消息文本
-  type?: 'error' | 'info' | 'success'    // 提示类型及对应颜色
+export interface ToastProps extends ToastData {
   duration?: number  // 显示时长(ms)
   onHide?: () => void  // 添加 onHide 回调
 }

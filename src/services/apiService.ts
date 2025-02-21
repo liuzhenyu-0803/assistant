@@ -1,84 +1,143 @@
 /**
  * apiService.ts
  * API 服务实现文件
- * 
- * 这个文件实现了与 AI 模型 API 交互的核心功能：
- * - 获取可用的模型列表
- * - 管理不同提供商的配置
- * 
- * 主要包含以下功能：
- * 1. 提供商配置管理
- * 2. 模型列表获取
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-16
  */
 
-/**
- * API 错误类型
- */
-export class APIError extends Error {
-  constructor(
-    message: string,
-    public readonly status?: number,
-    public readonly provider?: string
-  ) {
-    super(message);
-    this.name = 'APIError';
-  }
-}
+import OpenAI from 'openai'
+import { 
+  APIProvider, 
+  Model, 
+  ProviderConfig,
+  APIConfig,
+  ChatCompletionParams,
+  APIError
+} from '../types'
+import { configService } from './configService'
 
 /**
  * API提供商配置
  */
-const PROVIDER_CONFIGS: Record<string, any> = {
+const PROVIDER_CONFIGS: Record<APIProvider, ProviderConfig> = {
   openrouter: {
     name: 'openrouter',
-    label: 'OpenRouter',
     endpoint: 'https://openrouter.ai/api/v1',
+    modelsUrl: 'https://openrouter.ai/api/v1/models'
   }
-};
+}
 
 /**
- * 获取API提供商配置
+ * 获取当前API配置
+ * @returns {APIConfig} API配置
+ * @throws {Error} 如果配置尚未加载完成则抛出错误
  */
-export const getProviderConfig = (provider: string): any => {
-  return PROVIDER_CONFIGS[provider];
-};
+function getConfig(): APIConfig {
+  const config = configService.getConfig();
+  return config.apiConfig;
+}
 
 /**
- * 获取模型列表
+ * 获取可用的模型列表
+ * @returns 模型列表
  */
-export const getModelsList = async (): Promise<any[]> => {
-  const providerConfig = getProviderConfig('openrouter');
-  
+export const getModelsList = async (): Promise<Model[]> => {
+  const apiConfig = getConfig()
+  const providerConfig = PROVIDER_CONFIGS[apiConfig.provider]
+  const baseURL = providerConfig.modelsUrl
+
   try {
-    const response = await fetch(`${providerConfig.endpoint}/models`, {
-      method: 'GET',
+    const response = await fetch(baseURL, {
       headers: {
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${apiConfig.apiKey}`
       }
-    });
-    
+    })
+
     if (!response.ok) {
-      throw new APIError('获取模型列表失败', response.status, providerConfig.name);
+      throw new Error()
     }
-    
-    const data = await response.json();
-    
-    if (providerConfig.name === 'openrouter') {
-      return data.data.map((model: any) => ({
-        id: model.id,
-        name: model.name || model.id,
-        description: model.description || ''
-      }));
+
+    const data = await response.json()
+    if (!data.data) {
+      throw new Error()
     }
-    
-    return [];
+    return data.data
   } catch (error) {
-    if (error instanceof APIError) {
-      throw error;
-    }
-    throw new APIError('获取模型列表失败', undefined, providerConfig.name);
+    throw new APIError('获取模型列表失败', 'error')
   }
-};
+}
+
+// OpenAI 客户端实例
+let openaiClient: OpenAI | null = null
+
+// 获取或创建 OpenAI 客户端
+const getOpenAIClient = () => {
+  const config = getConfig()
+  
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      baseURL: PROVIDER_CONFIGS[config.provider].endpoint,
+      apiKey: config.apiKey,
+      defaultHeaders: {
+        'HTTP-Referer': 'http://localhost:5173',
+        'X-Title': 'AI Assistant',
+      },
+      dangerouslyAllowBrowser: true
+    })
+  }
+  
+  return openaiClient
+}
+
+/**
+ * 获取 API 响应
+ * @param params 聊天补全参数
+ * @returns 如果是非流式调用，返回完整的响应文本；如果是流式调用，返回 void
+ */
+export const getResponse = async (params: ChatCompletionParams): Promise<string | void> => {
+  try {
+    const client = getOpenAIClient()
+    
+    const requestParams = {
+      model: params.model,
+      messages: params.messages,
+      stream: params.stream,
+      temperature: params.temperature,
+      max_tokens: params.maxTokens,
+    }
+    
+    if (params.stream) {
+      const stream = await client.chat.completions.create({
+        ...requestParams,
+        stream: true,
+      })
+
+      // 如果提供了 signal，添加中止处理
+      if (params.signal) {
+        params.signal.addEventListener('abort', () => {
+          stream.controller.abort()
+          throw new APIError('请求已取消', 'abort')
+        })
+      }
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content
+        if (content && params.onChunk) {
+          params.onChunk(content, false)
+        }
+      }
+      
+      if (params.onChunk) {
+        params.onChunk('', true)
+      }
+      return
+    }
+
+    const completion = await client.chat.completions.create({
+      ...requestParams,
+      stream: false,
+    })
+    console.log("API 响应:", completion)
+    return completion.choices[0]?.message?.content || ''
+  } catch (error) {
+    throw error
+  }
+}

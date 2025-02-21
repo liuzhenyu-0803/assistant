@@ -1,15 +1,6 @@
 /**
  * Message/index.tsx
  * 消息项组件
- * 
- * 功能：
- * - 展示单条消息内容
- * - 区分用户和AI消息样式
- * - 支持Markdown渲染
- * - 支持代码高亮
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-16
  */
 
 import React from 'react'
@@ -17,7 +8,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Message as MessageType } from '../../types/interfaces'
+import { Message as MessageType } from '../../types'
 import './styles.css'
 
 interface MessageProps {

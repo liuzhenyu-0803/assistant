@@ -15,6 +15,7 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Highlight, type PrismTheme } from 'prism-react-renderer'
+import { MarkdownRendererProps, CodeProps } from '../../types'
 import './styles.css'
 
 // 定义代码高亮主题
@@ -79,18 +80,6 @@ const draculaTheme: PrismTheme = {
       }
     }
   ]
-}
-
-interface MarkdownRendererProps {
-  content: string
-}
-
-interface CodeProps {
-  node?: any
-  inline?: boolean
-  className?: string
-  children?: React.ReactNode
-  [key: string]: any
 }
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {

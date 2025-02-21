@@ -28,10 +28,10 @@
  */
 
 import React, { useState } from 'react'
-import './styles.css'
-import { InputAreaProps } from '../../types/interfaces'
+import { InputAreaProps } from '../../types'
 import { cleanText, isEmptyText } from '../../utils/helpers'
 import { SendIcon, StopIcon, SettingsIcon, ClearIcon } from '../icons'
+import './styles.css'
 
 /**
  * 输入区组件

@@ -1,42 +1,66 @@
 import { useState, useEffect } from 'react'
-import { Message, ToastData, MessageStatus } from './types/interfaces'
-import { MessageList, InputArea, Settings, Toast } from './components/index'
+import { Message, ToastData, MessageStatus } from './types'
+import { MessageList, InputArea, Settings, Toast } from './components'
 import { handleMessageSend, createMessage } from './services/messageService'
 import { summaryService } from './services/summaryService'
+import { configService } from './services/configService' // 添加 configService 引用
 import './App.css'
-
-const UNKNOWN_ERROR = '未知错误'
 
 // 应用程序主组件
 function App() {
+  const [isLoading, setIsLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [chatStatus, setChatStatus] = useState<MessageStatus>('idle')
   const [messageController, setMessageController] = useState<AbortController | null>(null)
   const [isSettingsVisible, setSettingsVisible] = useState(false)
   const [toastData, setToastData] = useState<ToastData | null>(null)
 
-  // 组件卸载时中止正在进行的请求
+  useEffect(() => {
+    const initConfig = async () => {
+      try {
+        await configService.loadConfig()
+      } catch (error) {
+
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    initConfig()
+  }, [])
+
   useEffect(() => {
     return () => {
       if (messageController) {
         messageController.abort()
       }
     }
-  }, [])
+  }, [messageController])
 
-  // 监听消息变化，处理摘要生成
   useEffect(() => {
+    const abortController = new AbortController()
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1]
       if (lastMessage.role === 'assistant' && lastMessage.status === 'success') {
-        generateSummary(messages)
+        (async () => {
+          try {
+            await summaryService.updateSummary(messages, abortController.signal)
+          } catch (error) {
+          }
+        })()
       }
+    }
+    return () => {
+      abortController.abort()
     }
   }, [messages])
 
-  // 显示提示信息
-  const showToast = (message: string, type: ToastData['type'] = 'error') => {
-    setToastData({ message, type })
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <div className="loading-text">加载中...</div>
+      </div>
+    )
   }
 
   // 打开设置面板
@@ -47,42 +71,22 @@ function App() {
 
   // 清空对话历史
   const clearConversation = () => {
-    setMessages([])
-    summaryService.clearSummaries()
-  }
-
-  // 生成对话摘要
-  const generateSummary = async (messages: Message[]) => {
-    try {
-      await summaryService.addSummary(messages)
-    } catch (error) {
-      console.error('生成对话摘要失败:', error)
-      showToast(`生成对话摘要失败: ${error instanceof Error ? error.message : UNKNOWN_ERROR}`)
+    // 中止正在进行的消息生成
+    if (messageController) {
+      messageController.abort()
+      setMessageController(null)
     }
+    // 更新消息状态
+    setChatStatus('idle')
+    // 清空消息和摘要
+    setMessages([])
+    summaryService.clearSummary()
   }
 
   // 中止消息生成
   const abortMessageGeneration = () => {
     if (messageController) {
       messageController.abort()
-      
-      if (chatStatus === 'waiting') {
-        setMessages(prev => {
-          const lastMessage = prev[prev.length - 1]
-          if (lastMessage?.role === 'assistant') {
-            const newMessages = [...prev]
-            newMessages[newMessages.length - 1] = {
-              ...lastMessage,
-              status: 'aborted',
-              content: '[用户取消了请求]'
-            }
-            return newMessages
-          }
-          return prev
-        })
-        setMessageController(null)
-        setChatStatus('idle')
-      }
     }
   }
 
@@ -109,14 +113,20 @@ function App() {
           newMessages[index] = {
             ...message,
             id: assistantMessage.id,
-            timestamp: assistantMessage.timestamp
+            timestamp: assistantMessage.timestamp,
+            role: assistantMessage.role,
           }
 
-          // 如果是取消状态，添加提示信息
+          // 如果是取消状态或错误状态，在消息中显示提示信息
           if (message.status === 'aborted') {
             newMessages[index] = {
               ...newMessages[index],
-              content: message.content + '\n\n[用户取消了请求]'
+              content: message.content + '[用户取消了请求]'
+            }
+          } else if (message.status === 'error') {
+            newMessages[index] = {
+              ...newMessages[index],
+              content: message.content + '[错误: ' + message.error + ']'
             }
           }
 
@@ -125,14 +135,6 @@ function App() {
         
         // 更新全局对话状态
         setChatStatus(message.status === 'receiving' ? 'receiving' : 'idle')
-        
-        // 如果发生错误，显示错误提示
-        if (message.status === 'error' && message.error) {
-          setToastData({
-            message: message.error,
-            type: 'error'
-          })
-        }
       }
     )
   }
