@@ -46,6 +46,12 @@ export const handleMessageSend = async (
       stream: true,
       onChunk: (chunk, done) => {
         responseContent += chunk
+
+        if (done)
+        {
+          console.log('API 流式响应:', responseContent)
+        }
+
         onMessage({
           content: responseContent,
           status: done ? 'success' : 'receiving'

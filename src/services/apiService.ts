@@ -124,10 +124,11 @@ export const getResponse = async (params: ChatCompletionParams): Promise<string 
           params.onChunk(content, false)
         }
       }
-      
+
       if (params.onChunk) {
-        params.onChunk('', true)
+        params.onChunk("", true)
       }
+
       return
     }
 
@@ -136,7 +137,17 @@ export const getResponse = async (params: ChatCompletionParams): Promise<string 
       stream: false,
     })
     console.log("API 响应:", completion)
-    return completion.choices[0]?.message?.content || ''
+    
+    if (!completion?.choices?.length) {
+      throw new Error('API 响应格式错误：未找到有效的响应内容')
+    }
+    
+    const content = completion.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('API 响应格式错误：响应内容为空')
+    }
+    
+    return content
   } catch (error) {
     throw error
   }

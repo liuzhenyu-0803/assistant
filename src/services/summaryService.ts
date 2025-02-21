@@ -92,7 +92,7 @@ class SummaryService {
       throw new Error('没有找到对应的用户消息')
     }
 
-    let systemPrompt = '你是一个对话摘要助手。请基于之前的摘要和新的对话，在尽可能保留信息的前提下，生成一个新的尽可能简短的摘要（不超过1000字）。'
+    let systemPrompt = '你是一个对话摘要助手。请基于之前的摘要和新的对话，在尽可能保留之前摘要和新的对话中关键信息的前提下，生成一个新的尽可能简短的摘要（不超过1000字）。'
 
     const apiMessages: ChatMessage[] = [
       { role: 'system' as const, content: systemPrompt },
@@ -106,7 +106,7 @@ class SummaryService {
 
     // 添加最新一轮的对话
     apiMessages.push(
-      { role: 'user' as const, content: `新的对话记录: \nuser: ${userMessage.content}\nassistant: ${aiResponse.content}` }
+      { role: 'user' as const, content: `新的对话: \nuser: ${userMessage.content}\nassistant: ${aiResponse.content}` }
     )
 
     console.log('开始生成摘要:', { 
@@ -115,16 +115,20 @@ class SummaryService {
       apiMessages
     })
 
-    const summary = await getResponse({
+    const response = await getResponse({
       messages: apiMessages,
       model: configService.getConfig().apiConfig!.selectedModel,
       stream: false,
       signal
-    }) as string
+    })
 
-    console.log('生成的摘要:', summary)
+    if (!response) {
+      throw new Error('生成摘要失败：未收到有效响应')
+    }
 
-    return summary.trim()
+    console.log('生成的摘要:', response)
+
+    return response.trim()
   }
 }
 
