@@ -76,7 +76,7 @@ export const createMessage = (content: string, role: 'user' | 'assistant' = 'use
   role,
   content,
   timestamp: Date.now(),
-  status: 'sending'
+  status: 'waiting'
 })
 
 

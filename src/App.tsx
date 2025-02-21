@@ -66,7 +66,7 @@ function App() {
     if (messageController) {
       messageController.abort()
       
-      if (chatStatus === 'sending') {
+      if (chatStatus === 'waiting') {
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1]
           if (lastMessage?.role === 'assistant') {
@@ -74,7 +74,7 @@ function App() {
             newMessages[newMessages.length - 1] = {
               ...lastMessage,
               status: 'aborted',
-              content: lastMessage.content + '\n\n[用户取消了请求]'
+              content: '[用户取消了请求]'
             }
             return newMessages
           }
@@ -88,7 +88,7 @@ function App() {
 
   // 处理消息发送
   const sendMessage = async (content: string) => {
-    setChatStatus('sending')
+    setChatStatus('waiting')
     
     // 创建用户消息和助手消息
     const userMessage = createMessage(content, 'user')
@@ -154,7 +154,7 @@ function App() {
         onAbortMessageReceiving={abortMessageGeneration}
         onOpenSettings={openSettings}
         onClearMessages={clearConversation}
-        isWaiting={chatStatus === 'sending'}
+        isWaiting={chatStatus === 'waiting'}
         isReceiving={chatStatus === 'receiving'}
       />
 

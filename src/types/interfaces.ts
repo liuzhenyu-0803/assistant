@@ -8,7 +8,7 @@
  *   - role: 消息发送者角色(user/assistant)
  *   - content: 消息内容
  *   - timestamp: 发送时间戳
- *   - status: 消息状态(sending/receiving/success/error/aborted)
+ *   - status: 消息状态(waiting/receiving/success/error/aborted)
  *   - error: 错误信息
  * - InputAreaProps: 输入区组件属性
  * - MessageListProps: 消息列表组件属性
@@ -33,12 +33,12 @@ export interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: number
-  status: 'sending' | 'receiving' | 'success' | 'error' | 'aborted'
+  status: 'waiting' | 'receiving' | 'success' | 'error' | 'aborted'
   error?: string
 }
 
 // 消息状态类型定义
-export type MessageStatus = 'idle' | 'sending' | 'receiving' | 'success' | 'error' | 'aborted'
+export type MessageStatus = 'idle' | 'waiting' | 'receiving' | 'success' | 'error' | 'aborted'
 
 // 输入区属性接口
 export interface InputAreaProps {

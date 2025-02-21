@@ -25,7 +25,7 @@ interface MessageProps {
 }
 
 export const Message: React.FC<MessageProps> = ({ message }) => {
-  const content = message.role === 'assistant' && message.status === 'sending' 
+  const content = message.role === 'assistant' && message.status === 'waiting' 
     ? '正在思考...' 
     : message.content
 
