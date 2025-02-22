@@ -259,6 +259,56 @@
   cursor: not-allowed !important;
 }
 
+/* Select 组件样式 */
+.select-control {
+  background-color: #0d0d14;
+  border: 1px solid #2f2f3d;
+  border-radius: 6px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #e1e1e9;
+  transition: all 0.2s;
+}
+
+.select-control:hover {
+  border-color: #3f3f4d;
+  background-color: #13131c;
+}
+
+.select-menu {
+  margin-top: 4px;
+  background-color: #0d0d14;
+  border: 1px solid #2f2f3d;
+  border-radius: 6px;
+  color: #e1e1e9;
+  position: absolute;
+  z-index: 1000000;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+}
+
+.select-menu-list {
+  padding: 4px 0;
+}
+
+.select-option {
+  padding: 6px 12px;
+  cursor: pointer;
+  background-color: transparent;
+  color: #e1e1e9;
+  transition: all 0.2s;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.select-option:hover,
+.select-option:focus {
+  background-color: #4a3b89 !important;
+  color: #ffffff;
+}
+
 /* 保存按钮 */
 .save-button {
   background-color: #4a3b89;
