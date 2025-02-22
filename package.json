@@ -18,12 +18,14 @@
     "make": "npm run build && electron-forge make"
   },
   "dependencies": {
+    "@types/react-select": "^5.0.0",
     "electron-squirrel-startup": "^1.0.1",
     "openai": "^4.85.3",
     "prism-react-renderer": "^2.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.3",
+    "react-select": "^5.10.0",
     "react-syntax-highlighter": "^15.6.1",
     "remark-gfm": "^4.0.1"
   },

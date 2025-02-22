@@ -16,6 +16,7 @@ import './styles.css'
 import { APIProvider, Model, APIConfig } from '../../types'
 import { getModelsList } from '../../services/apiService'
 import { configService } from '../../services/configService'
+import Select from 'react-select'
 
 interface SettingsProps {
   onClose: () => void
@@ -30,6 +31,16 @@ interface SettingsState {
   isSaving: boolean
   isLoadingModels: boolean
   error?: string
+}
+
+interface ModelOption {
+  value: string
+  label: string
+}
+
+interface ProviderOption {
+  value: APIProvider
+  label: string
 }
 
 const initialState: SettingsState = {
@@ -133,15 +144,24 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         <div className="settings-content">
           <div className="settings-section">
             <h3 className="settings-section-title">API Provider</h3>
-            <select
+            <Select
               className="settings-select"
-              value={state.apiProvider}
-              onChange={(e) => handleProviderChange(e.target.value as APIProvider)}
-              disabled={state.isSaving}
-            >
-              <option value="openrouter">OpenRouter</option>
-              <option value="openai">OpenAI</option>
-            </select>
+              classNamePrefix="settings-select"
+              value={{ 
+                value: state.apiProvider, 
+                label: state.apiProvider === 'openrouter' ? 'OpenRouter' : 'OpenAI' 
+              }}
+              onChange={(option) => handleProviderChange((option as { value: APIProvider })?.value || 'openrouter')}
+              options={[
+                { value: 'openrouter', label: 'OpenRouter' },
+                { value: 'openai', label: 'OpenAI' }
+              ]}
+              isDisabled={state.isSaving}
+              menuPortalTarget={document.body}
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 1000000 })
+              }}
+            />
           </div>
 
           <div className="settings-section">
@@ -163,21 +183,27 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
           <div className="settings-section">
             <h3 className="settings-section-title">模型选择</h3>
-            <select
+            <Select
               className="settings-select"
-              value={state.model}
-              onChange={(e) => updateState({ model: e.target.value })}
-              disabled={state.isSaving || state.isLoadingModels}
-            >
-              <option value="">
-                {state.isLoadingModels ? '加载模型列表中...' : '请选择模型'}
-              </option>
-              {state.models.map(model => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
-            </select>
+              classNamePrefix="settings-select"
+              value={state.models
+                .filter(m => m.id === state.model)
+                .map(m => ({ value: m.id, label: m.name }))[0]}
+              onChange={(option) => updateState({ model: (option as ModelOption)?.value || '' })}
+              options={state.models.map(model => ({
+                value: model.id,
+                label: model.name
+              }))}
+              isDisabled={state.isSaving || state.isLoadingModels}
+              isLoading={state.isLoadingModels}
+              placeholder={state.isLoadingModels ? '加载模型列表中...' : '请选择模型'}
+              noOptionsMessage={() => '没有找到匹配的模型'}
+              isClearable
+              menuPortalTarget={document.body}
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 1000000 })
+              }}
+            />
           </div>
 
           {state.error && (
