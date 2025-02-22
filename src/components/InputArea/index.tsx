@@ -27,7 +27,7 @@
  * @lastModified 2025-02-19
  */
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { InputAreaProps } from '../../types'
 import { cleanText, isEmptyText } from '../../utils/helpers'
 import { SendIcon, StopIcon, SettingsIcon, ClearIcon } from '../icons'
@@ -58,6 +58,8 @@ function InputArea({
 }: InputAreaProps) {
   // 消息内容状态
   const [message, setMessage] = useState('')
+  // 添加输入框引用
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   /**
    * 处理文本变化
@@ -76,7 +78,7 @@ function InputArea({
    * 1. 清理文本（去除多余空格等）
    * 2. 验证文本是否为空
    * 3. 检查组件是否处于可发送状态
-   * 4. 发送成功后清空输入框
+   * 4. 发送成功后清空输入框并保持焦点
    */
   const handleSend = async () => {
     const cleanedMessage = cleanText(message)
@@ -84,6 +86,8 @@ function InputArea({
       try {
         setMessage('') // 先清空内容，提供更好的用户体验
         await onSendMessage(cleanedMessage)
+        // 重新聚焦输入框
+        inputRef.current?.focus()
       } catch {
         // 错误处理由父组件负责，保持组件职责单一
       }
@@ -110,13 +114,14 @@ function InputArea({
     <div className="input-area">
       {/* 文本输入区域 */}
       <textarea
+        ref={inputRef}
         value={message}
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
         placeholder={isWaiting ? '正在等待 AI 响应...' : placeholder}
         disabled={isWaiting || disabled}
         rows={3}
-        className="edit-box"
+        className={`edit-box ${isOverLimit ? 'over-length' : ''}`}
       />
       {/* 工具栏 */}
       <div className="toolbar">
