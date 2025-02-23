@@ -55,6 +55,7 @@
   flex-direction: column;
   z-index: 1000;
   animation: slideIn 0.3s ease-out;
+  overflow: hidden; /* 确保内容不会超出圆角 */
 }
 
 /* 标题栏 */
@@ -101,15 +102,35 @@
 
 /* 内容区 */
 .settings-content {
-  padding: 20px 24px;
+  padding: 24px 28px 32px;
   overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   max-height: calc(90vh - 120px);
   background-color: #1e1e2d;
   color: #e1e1e9;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* 自定义滚动条样式 */
+.settings-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background-color: rgba(142, 142, 160, 0.3);
+  border-radius: 4px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(142, 142, 160, 0.5);
 }
 
 /* 配置项组 */
@@ -188,26 +209,41 @@
   border: 1px solid #2f2f3d !important;
   border-radius: 6px !important;
   margin-top: 4px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24) !important;
+  z-index: 1000000 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+.settings-select__menu-list {
+  padding: 4px !important;
 }
 
 .settings-select__option {
-  background-color: transparent !important;
-  color: #e1e1e9 !important;
+  padding: 6px 12px !important;
+  font-size: 14px !important;
   cursor: pointer !important;
-  padding: 10px 12px !important;
+  background-color: #0d0d14 !important;
+  color: #e1e1e9 !important;
+  min-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .settings-select__option:hover {
-  background-color: #13131c !important;
+  background-color: #1a1a24 !important;
 }
 
 .settings-select__option--is-focused {
-  background-color: #13131c !important;
+  background-color: #1a1a24 !important;
 }
 
 .settings-select__option--is-selected {
   background-color: #4a3b89 !important;
+  color: #fff !important;
+}
+
+/* 选中且悬浮的状态 */
+.settings-select__option--is-selected:hover {
+  background-color: #5a4b99 !important;
 }
 
 .settings-select__single-value {
@@ -244,14 +280,14 @@
   color: #e1e1e9 !important;
 }
 
+.settings-select__value-container {
+  padding: 2px 8px !important;
+}
+
 .settings-select__no-options-message {
   color: #6b6b80 !important;
   text-align: center !important;
   padding: 10px !important;
-}
-
-.settings-select__value-container {
-  padding: 2px 8px !important;
 }
 
 .settings-select__control--is-disabled {
@@ -309,53 +345,6 @@
   color: #ffffff;
 }
 
-/* 保存按钮 */
-.save-button {
-  background-color: #4a3b89;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.save-button:hover:not(:disabled) {
-  background-color: #5a4a99;
-}
-
-.save-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 验证相关 */
-.validation-button {
-  height: 36px;
-  padding: 0 16px;
-  background-color: #2b2b3f !important;
-  color: #e1e1e9 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-  min-width: 80px;
-}
-
-.validation-button:hover:not(:disabled) {
-  background-color: #32324a !important;
-}
-
-.validation-error {
-  margin-top: 8px;
-  color: #ff4d4f !important;
-  font-size: 12px;
-}
-
 /* 错误提示和提示文本 */
 .settings-error {
   margin: 16px 0;
@@ -371,42 +360,6 @@
   margin-top: 8px;
   color: #8e8ea0;
   font-size: 12px;
-}
-
-/* 底部区域 */
-.settings-footer {
-  padding: 12px 24px;
-  display: flex;
-  justify-content: flex-end;
-  background-color: #1e1e2d;
-}
-
-/* 按钮样式 */
-.settings-button-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.settings-button {
-  height: 32px;
-  padding: 0 16px;
-  font-size: 13px;
-  background-color: #4a3b89 !important;
-  color: #ffffff !important;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.settings-button:hover:not(:disabled) {
-  background-color: #5a4b99 !important;
-}
-
-.settings-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* 响应式调整 */
@@ -428,20 +381,12 @@
     gap: 8px;
   }
   
-  .validation-button {
-    width: 100%;
-  }
-
   .settings-button-container {
     margin-top: 20px;
   }
   
   .settings-footer {
     padding: 12px 20px;
-  }
-  
-  .save-button {
-    width: 100%;
   }
 }
 

@@ -40,9 +40,10 @@ export const handleMessageSend = async (
     // 打印messages
     console.log('发送的消息列表:', messages)
 
+    const config = configService.getConfig()
     await getResponse({
       messages,
-      model: configService.getConfig().apiConfig!.selectedModel,
+      model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
       stream: true,
       onChunk: (chunk, done) => {
         responseContent += chunk

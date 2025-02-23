@@ -13,9 +13,15 @@ class ConfigService {
   /** 当前系统配置 */
   private config: SystemConfig = {
     apiConfig: {
-      provider: 'moonshot',
-      apiKey: '',
-      selectedModel: ''
+      provider: 'openrouter',
+      apiKeys: {
+        openrouter: '',
+        siliconflow: ''
+      },
+      selectedModels: {
+        openrouter: '',
+        siliconflow: ''
+      }
     }
   };
 
@@ -25,9 +31,15 @@ class ConfigService {
   /** 默认系统配置，用于初始化和重置 */
   private readonly defaultConfig: SystemConfig = {
     apiConfig: {
-      provider: 'moonshot',
-      apiKey: '',
-      selectedModel: ''
+      provider: 'openrouter',
+      apiKeys: {
+        openrouter: '',
+        siliconflow: ''
+      },
+      selectedModels: {
+        openrouter: '',
+        siliconflow: ''
+      }
     }
   };
 

@@ -20,17 +20,17 @@ const PROVIDER_CONFIGS: Record<APIProvider, ProviderConfig> = {
   openrouter: {
     name: 'openrouter',
     endpoint: 'https://openrouter.ai/api/v1',
-    modelsUrl: 'https://openrouter.ai/api/v1/models'
+    supportedModels: [],  // 从 API 获取
+    defaultHeaders: {
+      'HTTP-Referer': 'https://github.com/liuzhenyu-yyy/assistant',
+      'X-Title': 'AI Assistant'
+    }
   },
-  moonshot: {
-    name: 'moonshot',
-    endpoint: 'https://api.moonshot.cn/v1',
-    // 月之暗面目前只支持这几个固定的模型
-    supportedModels: [
-      'moonshot-v1-8k',
-      'moonshot-v1-32k',
-      'moonshot-v1-128k'
-    ]
+  siliconflow: {
+    name: 'siliconflow',
+    endpoint: 'https://api.siliconflow.com/v1',
+    supportedModels: [],  // 从 API 获取
+    defaultHeaders: {}
   }
 }
 
@@ -49,63 +49,42 @@ function getConfig(): APIConfig {
  */
 export const getModelsList = async (): Promise<string[]> => {
   const apiConfig = getConfig()
-  const providerConfig = PROVIDER_CONFIGS[apiConfig.provider]
-  
-  console.log('Getting models for provider:', apiConfig.provider)
-  console.log('Provider config:', providerConfig)
+  if (!apiConfig) throw new Error('API configuration not found')
 
-  // 月之暗面直接返回支持的模型列表
-  if (apiConfig.provider === 'moonshot') {
-    console.log('Using static model list for Moonshot:', providerConfig.supportedModels)
-    return providerConfig.supportedModels || []
+  const providerConfig = PROVIDER_CONFIGS[apiConfig.provider]
+  if (!providerConfig) throw new Error(`Provider ${apiConfig.provider} not found`)
+
+  // 如果已经有缓存的模型列表，直接返回
+  if (providerConfig.supportedModels.length > 0) {
+    console.log('Using cached model list:', providerConfig.supportedModels)
+    return providerConfig.supportedModels
   }
 
-  // OpenRouter 通过 API 获取模型列表
+  // 获取模型列表
   try {
-    if (!providerConfig.modelsUrl) {
-      console.error('No models URL configured for provider:', apiConfig.provider)
-      return []
-    }
-
-    console.log('Fetching OpenRouter models from:', providerConfig.modelsUrl)
-    console.log('Using API Key:', apiConfig.apiKey ? apiConfig.apiKey.substring(0, 4) + '...' : 'none')
-    
-    const response = await fetch(providerConfig.modelsUrl, {
+    const response = await fetch(`${providerConfig.endpoint}/models`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiConfig.apiKey}`,
-        'HTTP-Referer': 'http://localhost:5173',
-        'X-Title': 'AI Assistant'
+        ...providerConfig.defaultHeaders,
+        'Authorization': `Bearer ${apiConfig.apiKeys[apiConfig.provider]}`
       }
     })
 
-    console.log('Response status:', response.status)
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-
     if (!response.ok) {
-      const error = await response.text()
-      console.error('OpenRouter API error:', error)
-      throw new Error('获取模型列表失败')
+      throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`)
     }
 
-    const text = await response.text()
-    console.log('Raw response text:', text)
+    const data = await response.json()
+    const models = data.data.map((model: any) => model.id)
     
-    const data = JSON.parse(text)
-    console.log('Parsed response:', JSON.stringify(data, null, 2))
-
-    // OpenRouter API 返回格式: { data: [{ id: string, name: string, ... }] }
-    if (data.data && Array.isArray(data.data)) {
-      const models = data.data.map((model: any) => model.id)
-      console.log('Extracted model IDs:', models)
-      return models
-    } else {
-      console.error('Unexpected OpenRouter response format:', data)
-      return []
-    }
+    // 缓存模型列表
+    providerConfig.supportedModels = models
+    console.log('Fetched model list:', models)
+    
+    return models
   } catch (error) {
-    console.error('获取模型列表失败:', error)
-    return []
+    console.error('Failed to fetch models:', error)
+    throw error
   }
 }
 
@@ -115,11 +94,8 @@ const getOpenAIClient = () => {
   
   return new OpenAI({
     baseURL: PROVIDER_CONFIGS[config.provider].endpoint,
-    apiKey: config.apiKey,
-    defaultHeaders: config.provider === 'moonshot' ? {} : {
-      'HTTP-Referer': 'http://localhost:5173',
-      'X-Title': 'AI Assistant',
-    },
+    apiKey: config.apiKeys[config.provider],
+    defaultHeaders: PROVIDER_CONFIGS[config.provider].defaultHeaders,
     dangerouslyAllowBrowser: true
   })
 }
@@ -129,51 +105,68 @@ const getOpenAIClient = () => {
  * @param params 聊天补全参数
  * @returns 如果是非流式调用，返回完整的响应文本；如果是流式调用，返回 void
  */
-export const getResponse = async (params: ChatCompletionParams): Promise<string | void> => {
-
-  console.log('getResponse:', params.model)
-
+export const getResponse = async ({
+  messages,
+  model,
+  stream = false,
+  signal,
+  onChunk,
+  temperature = 0.7,
+  maxTokens = 2000
+}: ChatCompletionParams): Promise<string | null> => {
   try {
     const client = getOpenAIClient()
     
     const requestParams = {
-      model: params.model,
-      messages: params.messages,
-      stream: params.stream,
-      temperature: params.temperature,
-      max_tokens: params.maxTokens
+      model,
+      messages,
+      stream,
+      temperature,
+      max_tokens: maxTokens,
+      signal
     }
 
-    if (params.stream) {
+    if (stream) {
       const stream = await client.chat.completions.create({
         ...requestParams,
-        stream: params.stream
+        stream: true
       })
       
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || ''
-        if (params.onChunk) {
-          params.onChunk(content, false)
+        if (onChunk) {
+          onChunk(content, false)
         }
       }
 
-      if (params.onChunk) {
-        params.onChunk('', true)
+      if (onChunk) {
+        onChunk('', true)
       }
+      return null
     } else {
       const response = await client.chat.completions.create({
         ...requestParams,
         stream: false
       })
 
-      console.log('API 响应:', response)
-
       return response.choices[0]?.message?.content || ''
     }
   } catch (error) {
     if (error instanceof Error) {
-      throw new APIError(error.message)
+      throw new APIError({
+        status: 500,
+        message: error.message,
+        cause: error,
+        endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
+        provider: configService.getConfig().apiConfig.provider
+      })
     }
-    throw new APIError('未知错误')
+    throw new APIError({
+      status: 500,
+      message: 'Unknown error',
+      cause: error,
+      endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
+      provider: configService.getConfig().apiConfig.provider
+    })
   }
 }

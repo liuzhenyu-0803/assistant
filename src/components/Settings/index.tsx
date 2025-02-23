@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import './styles.css'
-import { APIProvider } from '../../types'
+import { APIProvider } from '../../types/services/api'
 import { getModelsList } from '../../services/apiService'
 import { configService } from '../../services/configService'
 import Select from 'react-select'
@@ -22,45 +22,152 @@ interface SettingsProps {
   onClose: () => void
 }
 
-// API Provider 类型
-type ApiProvider = 'openrouter' | 'moonshot'
-
 // Provider 选项接口
 interface ProviderOption {
-  value: ApiProvider
+  value: APIProvider
   label: string
 }
 
+// Provider 选项列表
+const providerOptions: ProviderOption[] = [
+  { value: 'openrouter', label: 'OpenRouter' },
+  { value: 'siliconflow', label: 'SiliconFlow' }
+]
+
 // 设置状态接口
 interface SettingsState {
-  apiProvider: ApiProvider
-  apiKey: string
-  selectedModel: string
-  availableModels: string[]
-  isLoadingModels: boolean
-  isSaving: boolean
-  isDirty: boolean
-  error?: string
+  apiProvider: APIProvider
+  apiKeys: Record<APIProvider, string>
+  selectedModels: Record<APIProvider, string>
+  models: string[]
+  isLoading: boolean
+  isOpen: boolean
 }
 
 // 初始状态
-const initialState: SettingsState = {
-  apiProvider: 'moonshot',
-  apiKey: '',
-  selectedModel: '',
-  availableModels: [],
-  isLoadingModels: false,
-  isSaving: false,
-  isDirty: false,
+const defaultState: SettingsState = {
+  apiProvider: 'openrouter',
+  apiKeys: {
+    openrouter: '',
+    siliconflow: ''
+  },
+  selectedModels: {
+    openrouter: '',
+    siliconflow: ''
+  },
+  models: [],
+  isLoading: false,
+  isOpen: false
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const [state, setState] = useState<SettingsState>(initialState)
+  const [state, setState] = useState<SettingsState>(defaultState)
   
-  // 更新单个状态字段
+  // 更新本地状态
   const updateState = useCallback((updates: Partial<SettingsState>) => {
-    setState(prev => ({ ...prev, ...updates, isDirty: true }))
+    setState(prev => ({ ...prev, ...updates }))
   }, [])
+
+  // 加载模型列表
+  const loadModels = useCallback(async () => {
+    console.log('Loading models...')  // 添加日志
+    updateState({ isLoading: true })
+    try {
+      const models = await getModelsList()
+      console.log('Loaded models:', models)  // 添加日志
+      updateState({
+        models,
+        isLoading: false
+      })
+    } catch (error) {
+      console.error('获取模型列表失败:', error)
+      updateState({ 
+        isLoading: false,
+        models: []  // 清空模型列表
+      })
+    }
+  }, [updateState])
+
+  // 加载配置
+  const loadConfig = useCallback(async () => {
+    try {
+      const config = await configService.getConfig()
+      setState(prev => ({
+        ...prev,
+        apiProvider: config.apiConfig.provider,
+        apiKeys: {
+          ...defaultState.apiKeys,
+          ...config.apiConfig.apiKeys
+        },
+        selectedModels: {
+          ...defaultState.selectedModels,
+          ...config.apiConfig.selectedModels
+        }
+      }))
+
+      // 加载完配置后自动加载模型列表
+      loadModels()
+    } catch (error) {
+      console.error('加载配置失败:', error)
+    }
+  }, [loadModels])
+
+  // 保存配置并重新加载模型列表
+  const saveConfigAndLoadModels = useCallback(async (updates: Partial<SettingsState>) => {
+    try {
+      const newConfig = {
+        provider: updates.apiProvider || state.apiProvider,
+        apiKeys: updates.apiKeys || state.apiKeys,
+        selectedModels: updates.selectedModels || state.selectedModels
+      }
+      
+      // 先保存配置
+      await configService.updateConfig(newConfig)
+      
+      // 更新本地状态
+      updateState(updates)
+      
+      // 如果改变了 provider，重新加载模型列表
+      if (updates.apiProvider) {
+        loadModels()
+      }
+    } catch (error) {
+      console.error('保存配置失败:', error)
+    }
+  }, [state.apiProvider, state.apiKeys, state.selectedModels, loadModels])
+
+  // 处理 provider 变更
+  const handleProviderChange = useCallback((provider: APIProvider) => {
+    console.log('Provider change:', provider)
+    saveConfigAndLoadModels({ 
+      apiProvider: provider,
+    })
+  }, [saveConfigAndLoadModels])
+
+  // 处理 API Key 变更
+  const handleApiKeyChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const newApiKey = event.target.value
+    const newApiKeys = {
+      ...state.apiKeys,
+      [state.apiProvider]: newApiKey
+    }
+    updateState({ apiKeys: newApiKeys })
+  }, [state.apiProvider, state.apiKeys, updateState])
+
+  // 处理 API Key 失去焦点
+  const handleApiKeyBlur = useCallback(() => {
+    saveConfigAndLoadModels({ apiKeys: state.apiKeys })
+  }, [state.apiKeys, saveConfigAndLoadModels])
+
+  // 处理模型选择
+  const handleModelChange = useCallback((option: { value: string, label: string } | null) => {
+    const model = option?.value || ''
+    const newSelectedModels = {
+      ...state.selectedModels,
+      [state.apiProvider]: model
+    }
+    saveConfigAndLoadModels({ selectedModels: newSelectedModels })
+  }, [state.apiProvider, state.selectedModels, saveConfigAndLoadModels])
 
   // 处理下拉菜单打开关闭时的滚动
   const handleMenuOpen = useCallback(() => {
@@ -78,106 +185,10 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     window.scrollTo(0, parseInt(scrollY || '0') * -1)
   }, [])
 
-  // 加载配置
+  // 初始化加载
   useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const config = configService.getConfig()
-        if (config.apiConfig) {
-          setState(prev => ({
-            ...prev,
-            apiProvider: config.apiConfig!.provider,
-            apiKey: config.apiConfig!.apiKey,
-            selectedModel: config.apiConfig!.selectedModel || '',
-            isDirty: false
-          }))
-        }
-      } catch (error) {
-        console.error('加载配置失败:', error)
-      }
-    }
-
     loadConfig()
-  }, [])
-
-  // 加载模型列表
-  const loadModels = useCallback(async () => {
-    console.log('Loading models...')  // 添加日志
-    setState(prev => ({ ...prev, isLoadingModels: true }))
-    try {
-      // 获取模型列表
-      const models = await getModelsList()
-      console.log('Loaded models:', models)  // 添加日志
-      setState(prev => ({ 
-        ...prev, 
-        availableModels: models,
-        isLoadingModels: false 
-      }))
-    } catch (error) {
-      console.error('获取模型列表失败:', error)
-      setState(prev => ({ 
-        ...prev, 
-        isLoadingModels: false,
-        availableModels: []
-      }))
-    }
-  }, [])
-
-  // 监听 provider 变更
-  useEffect(() => {
-    console.log('Effect triggered, provider:', state.apiProvider)  // 添加日志
-    loadModels()
-  }, [state.apiProvider, loadModels])
-
-  // 处理 provider 变更
-  const handleProviderChange = useCallback((provider: ApiProvider) => {
-    console.log('Provider change:', provider)  // 添加日志
-    
-    // 更新 configService
-    const config = configService.getConfig()
-    config.apiConfig.provider = provider
-    configService.updateConfig(config.apiConfig)
-    
-    // 更新组件状态
-    setState(prev => {
-      console.log('Previous state:', prev)  // 添加日志
-      const newState = { 
-        ...prev,
-        apiProvider: provider,
-        selectedModel: '',  // 切换提供商时清空选中的模型
-        availableModels: [],  // 清空现有的模型列表
-        isDirty: true
-      }
-      console.log('New state:', newState)  // 添加日志
-      return newState
-    })
-
-    // 强制刷新模型列表
-    loadModels()
-  }, [loadModels])
-
-  // 保存配置
-  const handleSave = async () => {
-    updateState({ isSaving: true })
-    
-    try {
-      await configService.updateConfig({
-        provider: state.apiProvider,
-        apiKey: state.apiKey.trim(),
-        selectedModel: state.selectedModel
-      })
-      
-      updateState({ isDirty: false })
-      onClose()
-    } catch (error) {
-      console.error('保存配置失败:', error)
-      // 显示错误信息
-      updateState({ 
-        error: error instanceof Error ? error.message : '保存配置失败',
-        isSaving: false 
-      })
-    }
-  }
+  }, [loadConfig])
 
   const content = (
     <div className="settings-overlay">
@@ -193,78 +204,18 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           <div className="settings-section">
             <h3 className="settings-section-title">API Provider</h3>
             <Select
-              classNamePrefix="select"
-              value={{ 
-                value: state.apiProvider, 
-                label: state.apiProvider === 'moonshot' ? 'Moonshot' : 'OpenRouter'
-              } as ProviderOption}
-              onChange={(option) => handleProviderChange(option?.value || 'moonshot')}
-              options={[
-                { value: 'moonshot', label: 'Moonshot' },
-                { value: 'openrouter', label: 'OpenRouter' }
-              ] as ProviderOption[]}
-              isDisabled={state.isSaving}
+              className="settings-select"
+              classNamePrefix="settings-select"
+              value={providerOptions.find(option => option.value === state.apiProvider)}
+              onChange={(option) => handleProviderChange(option?.value as APIProvider)}
+              options={providerOptions}
+              isSearchable={false}
               menuPortalTarget={document.body}
-              onMenuOpen={handleMenuOpen}
-              onMenuClose={handleMenuClose}
               styles={{
                 menuPortal: (base) => ({
                   ...base,
                   zIndex: 1000000
-                }),
-                control: (base) => ({
-                  ...base,
-                  backgroundColor: '#0d0d14',
-                  border: '1px solid #2f2f3d',
-                  borderRadius: '6px',
-                  minHeight: '40px',
-                  boxShadow: 'none',
-                  '&:hover': {
-                    borderColor: '#3f3f4d',
-                    backgroundColor: '#13131c'
-                  }
-                }),
-                menu: (base) => ({
-                  ...base,
-                  backgroundColor: '#0d0d14',
-                  border: '1px solid #2f2f3d',
-                  borderRadius: '6px',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.24)',
-                  marginTop: '4px'
-                }),
-                menuList: (base) => ({
-                  ...base,
-                  padding: '4px 0'
-                }),
-                option: (base, state) => ({
-                  ...base,
-                  padding: '6px 12px',
-                  backgroundColor: state.isFocused ? '#4a3b89' : 'transparent',
-                  color: state.isFocused ? '#ffffff' : '#e1e1e9',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  lineHeight: '1.2',
-                  '&:hover': {
-                    backgroundColor: '#4a3b89',
-                    color: '#ffffff'
-                  }
-                }),
-                singleValue: (base) => ({
-                  ...base,
-                  color: '#e1e1e9'
-                }),
-                placeholder: (base) => ({
-                  ...base,
-                  color: '#71717a'
-                }),
-                input: (base) => ({
-                  ...base,
-                  color: '#e1e1e9'
                 })
-              }}
-              unstyled
-              classNames={{
-                control: () => 'select-control'
               }}
             />
           </div>
@@ -274,112 +225,36 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             <input
               type="text"
               className="settings-input"
-              placeholder="请输入 API Key"
-              value={state.apiKey}
-              onChange={(e) => updateState({ apiKey: e.target.value })}
-              disabled={state.isSaving}
+              value={state.apiKeys[state.apiProvider] || ''}
+              onChange={handleApiKeyChange}
+              onBlur={handleApiKeyBlur}
+              placeholder={`请输入 ${providerOptions.find(option => option.value === state.apiProvider)?.label} API Key`}
             />
           </div>
 
           <div className="settings-section">
-            <h3 className="settings-section-title">模型选择</h3>
+            <h3 className="settings-section-title">模型</h3>
             <Select
-              classNamePrefix="select"
-              value={state.availableModels
-                .filter(m => m === state.selectedModel)
-                .map(m => ({ value: m, label: m }))[0]}
-              onChange={(option) => updateState({ selectedModel: (option as { value: string, label: string })?.value || '' })}
-              options={state.availableModels.map(m => ({
-                value: m,
-                label: m
+              className="settings-select"
+              classNamePrefix="settings-select"
+              value={{ value: state.selectedModels[state.apiProvider], label: state.selectedModels[state.apiProvider] }}
+              onChange={handleModelChange}
+              options={state.models.map(model => ({
+                value: model,
+                label: model
               }))}
-              isDisabled={state.isSaving || state.isLoadingModels}
-              isLoading={state.isLoadingModels}
+              isLoading={state.isLoading}
+              isDisabled={state.isLoading}
               placeholder="请选择模型"
               menuPortalTarget={document.body}
-              onMenuOpen={handleMenuOpen}
-              onMenuClose={handleMenuClose}
               styles={{
-                menuPortal: (base) => ({
+                menuPortal: base => ({
                   ...base,
-                  zIndex: 1000000
-                }),
-                control: (base) => ({
-                  ...base,
-                  backgroundColor: '#0d0d14',
-                  border: '1px solid #2f2f3d',
-                  borderRadius: '6px',
-                  minHeight: '40px',
-                  boxShadow: 'none',
-                  '&:hover': {
-                    borderColor: '#3f3f4d',
-                    backgroundColor: '#13131c'
-                  }
-                }),
-                menu: (base) => ({
-                  ...base,
-                  backgroundColor: '#0d0d14',
-                  border: '1px solid #2f2f3d',
-                  borderRadius: '6px',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.24)',
-                  marginTop: '4px'
-                }),
-                menuList: (base) => ({
-                  ...base,
-                  padding: '4px 0'
-                }),
-                option: (base, state) => ({
-                  ...base,
-                  padding: '6px 12px',
-                  backgroundColor: state.isFocused ? '#4a3b89' : 'transparent',
-                  color: state.isFocused ? '#ffffff' : '#e1e1e9',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  lineHeight: '1.2',
-                  '&:hover': {
-                    backgroundColor: '#4a3b89',
-                    color: '#ffffff'
-                  }
-                }),
-                singleValue: (base) => ({
-                  ...base,
-                  color: '#e1e1e9'
-                }),
-                placeholder: (base) => ({
-                  ...base,
-                  color: '#71717a'
-                }),
-                input: (base) => ({
-                  ...base,
-                  color: '#e1e1e9'
-                }),
-                loadingIndicator: (base) => ({
-                  ...base,
-                  color: '#4a3b89'
+                  zIndex: 9999
                 })
-              }}
-              unstyled
-              classNames={{
-                control: () => 'select-control'
               }}
             />
           </div>
-
-          {state.error && (
-            <div className="settings-error">
-              {state.error}
-            </div>
-          )}
-        </div>
-
-        <div className="settings-footer">
-          <button
-            className="save-button"
-            onClick={handleSave}
-            disabled={!state.isDirty || state.isSaving}
-          >
-            {state.isSaving ? '保存中...' : '保存'}
-          </button>
         </div>
       </div>
     </div>

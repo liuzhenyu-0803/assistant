@@ -5,16 +5,16 @@
 import { ChatMessage } from '../models/message'
 
 /** API 提供商类型 */
-export type APIProvider = 'openrouter' | 'moonshot'
+export type APIProvider = 'openrouter' | 'siliconflow'
 
 /** API 配置接口 */
 export interface APIConfig {
   /** API 提供商 */
   provider: APIProvider
-  /** API 密钥 */
-  apiKey: string
-  /** 选中的模型 */
-  selectedModel: string
+  /** API 密钥映射 */
+  apiKeys: Record<APIProvider, string>
+  /** 每个提供商选中的模型 */
+  selectedModels: Record<APIProvider, string>
 }
 
 /** 提供商配置接口 */
@@ -23,10 +23,10 @@ export interface ProviderConfig {
   name: string
   /** API 端点 */
   endpoint: string
-  /** 模型列表端点 */
-  modelsUrl?: string
   /** 支持的模型列表 */
-  supportedModels?: string[]
+  supportedModels: string[]
+  /** 默认请求头 */
+  defaultHeaders: Record<string, string>
 }
 
 /** 聊天补全参数接口 */
@@ -78,9 +78,31 @@ export interface APIResponse {
 /** API 错误类 */
 export class APIError extends Error {
   type: 'error' | 'abort'
+  status: number
+  cause: any
+  endpoint: string
+  provider: APIProvider
 
-  constructor(message: string, type: 'error' | 'abort' = 'error') {
+  constructor({
+    status,
+    message,
+    cause,
+    endpoint,
+    provider,
+    type = 'error'
+  }: {
+    status: number
+    message: string
+    cause: any
+    endpoint: string
+    provider: APIProvider
+    type?: 'error' | 'abort'
+  }) {
     super(message)
+    this.status = status
+    this.cause = cause
+    this.endpoint = endpoint
+    this.provider = provider
     this.type = type
     this.name = 'APIError'
   }

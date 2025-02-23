@@ -82,7 +82,7 @@ function InputArea({
    */
   const handleSend = async () => {
     const cleanedMessage = cleanText(message)
-    if (!isEmptyText(cleanedMessage) && !isWaiting && !isReceiving && !disabled) {
+    if (!isEmptyText(cleanedMessage) && !isWaiting && !isReceiving) {
       try {
         setMessage('') // 先清空内容，提供更好的用户体验
         await onSendMessage(cleanedMessage)
@@ -119,7 +119,6 @@ function InputArea({
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
         placeholder={isWaiting ? '正在等待 AI 响应...' : placeholder}
-        disabled={isWaiting || disabled}
         rows={3}
         className={`edit-box ${isOverLimit ? 'over-length' : ''}`}
       />
@@ -163,7 +162,7 @@ function InputArea({
               className="icon-button"
               onClick={handleSend}
               title="发送"
-              disabled={isWaiting}
+              disabled={isEmptyText(cleanText(message))}
             >
               <SendIcon />
             </button>

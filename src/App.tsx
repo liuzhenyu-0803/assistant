@@ -11,6 +11,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [chatStatus, setChatStatus] = useState<MessageStatus>('idle')
+  const [isSummarizing, setIsSummarizing] = useState(false)
   const [messageController, setMessageController] = useState<AbortController | null>(null)
   const [isSettingsVisible, setSettingsVisible] = useState(false)
   const [toastData, setToastData] = useState<ToastData | null>(null)
@@ -43,8 +44,12 @@ function App() {
       if (lastMessage.role === 'assistant' && lastMessage.status === 'success') {
         (async () => {
           try {
+            setIsSummarizing(true)
             await summaryService.updateSummary(messages, abortController.signal)
           } catch (error) {
+            console.error('Summary update failed:', error)
+          } finally {
+            setIsSummarizing(false)
           }
         })()
       }
@@ -157,7 +162,7 @@ function App() {
         onOpenSettings={openSettings}
         onClearMessages={clearConversation}
         isWaiting={chatStatus === 'waiting'}
-        isReceiving={chatStatus === 'receiving'}
+        isReceiving={chatStatus === 'receiving' || isSummarizing}
       />
 
       {isSettingsVisible && (

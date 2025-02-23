@@ -138,9 +138,10 @@ class SummaryService {
       apiMessages
     })
 
+    const config = configService.getConfig()
     const response = await getResponse({
       messages: apiMessages,
-      model: configService.getConfig().apiConfig!.selectedModel,
+      model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
       stream: false,
       signal
     })
