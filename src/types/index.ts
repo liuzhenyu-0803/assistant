@@ -5,7 +5,6 @@
 
 // 数据模型层
 export * from './models/message'  // 消息相关类型
-export * from './models/model'    // AI模型相关类型
 export * from './models/summary'  // 摘要相关类型
 
 // 服务层

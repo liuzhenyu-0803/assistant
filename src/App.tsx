@@ -18,7 +18,7 @@ function App() {
   useEffect(() => {
     const initConfig = async () => {
       try {
-        await configService.loadConfig()
+        await configService.init()
       } catch (error) {
 
       } finally {

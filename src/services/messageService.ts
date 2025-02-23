@@ -50,6 +50,10 @@ export const handleMessageSend = async (
         if (done)
         {
           console.log('API 流式响应:', responseContent)
+
+          if (!responseContent) {
+            throw new Error('无响应内容')
+          }
         }
 
         onMessage({

@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import './styles.css'
-import { APIProvider, Model } from '../../types'
+import { APIProvider } from '../../types'
 import { getModelsList } from '../../services/apiService'
 import { configService } from '../../services/configService'
 import Select from 'react-select'
@@ -22,35 +22,36 @@ interface SettingsProps {
   onClose: () => void
 }
 
+// API Provider 类型
+type ApiProvider = 'openrouter' | 'moonshot'
+
+// Provider 选项接口
+interface ProviderOption {
+  value: ApiProvider
+  label: string
+}
+
+// 设置状态接口
 interface SettingsState {
-  apiProvider: APIProvider
+  apiProvider: ApiProvider
   apiKey: string
-  model: string
-  models: Model[]
-  isDirty: boolean
-  isSaving: boolean
+  selectedModel: string
+  availableModels: string[]
   isLoadingModels: boolean
+  isSaving: boolean
+  isDirty: boolean
   error?: string
 }
 
-interface ModelOption {
-  value: string
-  label: string
-}
-
-interface ProviderOption {
-  value: APIProvider
-  label: string
-}
-
+// 初始状态
 const initialState: SettingsState = {
-  apiProvider: 'openrouter',
+  apiProvider: 'moonshot',
   apiKey: '',
-  model: '',
-  models: [],
-  isDirty: false,
+  selectedModel: '',
+  availableModels: [],
+  isLoadingModels: false,
   isSaving: false,
-  isLoadingModels: true
+  isDirty: false,
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
@@ -77,7 +78,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     window.scrollTo(0, parseInt(scrollY || '0') * -1)
   }, [])
 
-  // 加载配置和模型列表
+  // 加载配置
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -87,7 +88,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             ...prev,
             apiProvider: config.apiConfig!.provider,
             apiKey: config.apiConfig!.apiKey,
-            model: config.apiConfig!.selectedModel || '',
+            selectedModel: config.apiConfig!.selectedModel || '',
             isDirty: false
           }))
         }
@@ -95,34 +96,65 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         console.error('加载配置失败:', error)
       }
     }
+
     loadConfig()
   }, [])
 
-  // 当 provider 改变时获取模型列表
-  useEffect(() => {
-    const loadModels = async () => {
-      updateState({ isLoadingModels: true })
-      try {
-        // 获取模型列表
-        const models = await getModelsList()
-        setState(prev => ({ ...prev, models }))
-      } catch (error) {
-        console.error('获取模型列表失败:', error)
-        updateState({ isLoadingModels: false })
-      } finally {
-        updateState({ isLoadingModels: false })
-      }
+  // 加载模型列表
+  const loadModels = useCallback(async () => {
+    console.log('Loading models...')  // 添加日志
+    setState(prev => ({ ...prev, isLoadingModels: true }))
+    try {
+      // 获取模型列表
+      const models = await getModelsList()
+      console.log('Loaded models:', models)  // 添加日志
+      setState(prev => ({ 
+        ...prev, 
+        availableModels: models,
+        isLoadingModels: false 
+      }))
+    } catch (error) {
+      console.error('获取模型列表失败:', error)
+      setState(prev => ({ 
+        ...prev, 
+        isLoadingModels: false,
+        availableModels: []
+      }))
     }
+  }, [])
+
+  // 监听 provider 变更
+  useEffect(() => {
+    console.log('Effect triggered, provider:', state.apiProvider)  // 添加日志
     loadModels()
-  }, [state.apiProvider])
+  }, [state.apiProvider, loadModels])
 
   // 处理 provider 变更
-  const handleProviderChange = (provider: APIProvider) => {
-    updateState({ 
-      apiProvider: provider,
-      model: '' // 切换提供商时清空选中的模型
+  const handleProviderChange = useCallback((provider: ApiProvider) => {
+    console.log('Provider change:', provider)  // 添加日志
+    
+    // 更新 configService
+    const config = configService.getConfig()
+    config.apiConfig.provider = provider
+    configService.updateConfig(config.apiConfig)
+    
+    // 更新组件状态
+    setState(prev => {
+      console.log('Previous state:', prev)  // 添加日志
+      const newState = { 
+        ...prev,
+        apiProvider: provider,
+        selectedModel: '',  // 切换提供商时清空选中的模型
+        availableModels: [],  // 清空现有的模型列表
+        isDirty: true
+      }
+      console.log('New state:', newState)  // 添加日志
+      return newState
     })
-  }
+
+    // 强制刷新模型列表
+    loadModels()
+  }, [loadModels])
 
   // 保存配置
   const handleSave = async () => {
@@ -132,7 +164,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
       await configService.updateConfig({
         provider: state.apiProvider,
         apiKey: state.apiKey.trim(),
-        selectedModel: state.model
+        selectedModel: state.selectedModel
       })
       
       updateState({ isDirty: false })
@@ -164,13 +196,14 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               classNamePrefix="select"
               value={{ 
                 value: state.apiProvider, 
-                label: 'OpenRouter'
+                label: state.apiProvider === 'moonshot' ? 'Moonshot' : 'OpenRouter'
               } as ProviderOption}
-              onChange={(option) => handleProviderChange(option?.value || 'openrouter')}
+              onChange={(option) => handleProviderChange(option?.value || 'moonshot')}
               options={[
+                { value: 'moonshot', label: 'Moonshot' },
                 { value: 'openrouter', label: 'OpenRouter' }
               ] as ProviderOption[]}
-              isDisabled={true}
+              isDisabled={state.isSaving}
               menuPortalTarget={document.body}
               onMenuOpen={handleMenuOpen}
               onMenuClose={handleMenuClose}
@@ -215,6 +248,18 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                     backgroundColor: '#4a3b89',
                     color: '#ffffff'
                   }
+                }),
+                singleValue: (base) => ({
+                  ...base,
+                  color: '#e1e1e9'
+                }),
+                placeholder: (base) => ({
+                  ...base,
+                  color: '#71717a'
+                }),
+                input: (base) => ({
+                  ...base,
+                  color: '#e1e1e9'
                 })
               }}
               unstyled
@@ -240,19 +285,17 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             <h3 className="settings-section-title">模型选择</h3>
             <Select
               classNamePrefix="select"
-              value={state.models
-                .filter(m => m.id === state.model)
-                .map(m => ({ value: m.id, label: m.name }))[0]}
-              onChange={(option) => updateState({ model: (option as ModelOption)?.value || '' })}
-              options={state.models.map(model => ({
-                value: model.id,
-                label: model.name
+              value={state.availableModels
+                .filter(m => m === state.selectedModel)
+                .map(m => ({ value: m, label: m }))[0]}
+              onChange={(option) => updateState({ selectedModel: (option as { value: string, label: string })?.value || '' })}
+              options={state.availableModels.map(m => ({
+                value: m,
+                label: m
               }))}
               isDisabled={state.isSaving || state.isLoadingModels}
               isLoading={state.isLoadingModels}
-              placeholder={state.isLoadingModels ? '加载模型列表中...' : '请选择模型'}
-              noOptionsMessage={() => '没有找到匹配的模型'}
-              isClearable
+              placeholder="请选择模型"
               menuPortalTarget={document.body}
               onMenuOpen={handleMenuOpen}
               onMenuClose={handleMenuClose}
@@ -297,6 +340,22 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                     backgroundColor: '#4a3b89',
                     color: '#ffffff'
                   }
+                }),
+                singleValue: (base) => ({
+                  ...base,
+                  color: '#e1e1e9'
+                }),
+                placeholder: (base) => ({
+                  ...base,
+                  color: '#71717a'
+                }),
+                input: (base) => ({
+                  ...base,
+                  color: '#e1e1e9'
+                }),
+                loadingIndicator: (base) => ({
+                  ...base,
+                  color: '#4a3b89'
                 })
               }}
               unstyled

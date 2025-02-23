@@ -52,6 +52,7 @@ export const APP_CONFIG = {
       preload: path.join(APP_ROOT, 'dist-electron/preload.mjs'),
       nodeIntegration: false,  // 禁用Node集成，提高安全性
       contextIsolation: true,  // 启用上下文隔离，防止原型污染
+      webSecurity: false,  // 禁用 CORS 检查
     }
   } satisfies BrowserWindowConstructorOptions,
 

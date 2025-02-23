@@ -2,11 +2,10 @@
  * API 服务相关的类型定义
  */
 
-import { Model } from '../models/model'
 import { ChatMessage } from '../models/message'
 
 /** API 提供商类型 */
-export type APIProvider = 'openrouter'
+export type APIProvider = 'openrouter' | 'moonshot'
 
 /** API 配置接口 */
 export interface APIConfig {
@@ -25,9 +24,9 @@ export interface ProviderConfig {
   /** API 端点 */
   endpoint: string
   /** 模型列表端点 */
-  modelsUrl: string
+  modelsUrl?: string
   /** 支持的模型列表 */
-  supportedModels?: Model[]
+  supportedModels?: string[]
 }
 
 /** 聊天补全参数接口 */
@@ -78,17 +77,16 @@ export interface APIResponse {
 
 /** API 错误类 */
 export class APIError extends Error {
-  /** 错误类型 */
-  type: 'error' | 'abort';
+  type: 'error' | 'abort'
 
   constructor(message: string, type: 'error' | 'abort' = 'error') {
-    super(message);
-    this.type = type;
-    this.name = 'APIError';
+    super(message)
+    this.type = type
+    this.name = 'APIError'
   }
 
   /** 判断是否为取消错误 */
   isAbort(): boolean {
-    return this.type === 'abort';
+    return this.type === 'abort'
   }
 }

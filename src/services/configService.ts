@@ -13,39 +13,42 @@ class ConfigService {
   /** 当前系统配置 */
   private config: SystemConfig = {
     apiConfig: {
-      provider: 'openrouter',
+      provider: 'moonshot',
       apiKey: '',
       selectedModel: ''
     }
   };
 
-  /** 配置文件路径 */
-  private readonly configPath = 'ai-assistant-config.json';
-
-  /** 标记配置是否已从文件加载 */
-  private isConfigLoaded: boolean = false;
+  /** 配置存储键名 */
+  private readonly storageKey = 'ai-assistant-config';
 
   /** 默认系统配置，用于初始化和重置 */
   private readonly defaultConfig: SystemConfig = {
     apiConfig: {
-      provider: 'openrouter',
+      provider: 'moonshot',
       apiKey: '',
       selectedModel: ''
     }
   };
 
   constructor() {
+    // 初始化时加载配置
+    this.loadConfig()
+  }
+
+  /**
+   * 初始化配置服务
+   * @returns {Promise<void>}
+   */
+  async init(): Promise<void> {
+    await this.loadConfig()
   }
 
   /**
    * 获取当前配置
    * @returns {SystemConfig} 当前的系统配置
-   * @throws {Error} 如果配置尚未加载完成则抛出错误
    */
   getConfig(): SystemConfig {
-    if (!this.isConfigLoaded) {
-      throw new Error('配置尚未加载完成');
-    }
     return this.config;
   }
 
@@ -53,61 +56,40 @@ class ConfigService {
    * 更新配置
    * @param {APIConfig} apiConfig - 新的 API 配置
    * @returns {Promise<void>}
-   * @throws {Error} 配置保存失败时抛出错误
    */
   async updateConfig(apiConfig: APIConfig): Promise<void> {
-    if (!this.isConfigLoaded) {
-      throw new Error('配置尚未加载完成');
-    }
-    this.config.apiConfig = {
-      ...this.config.apiConfig,
-      ...apiConfig
+    this.config = {
+      ...this.config,
+      apiConfig: { ...apiConfig }
     };
     await this.saveConfig();
   }
 
   /**
-   * 加载配置文件
-   * @returns {Promise<void>}
+   * 加载配置
    */
-  async loadConfig(): Promise<void> {
+  private loadConfig(): void {
     try {
-      const result = await window.electronAPI.readConfig(this.configPath);
-      if (result.success) {
-        const loadedConfig = JSON.parse(result.data);
-        this.config = {
-          ...this.defaultConfig,
-          ...loadedConfig,
-          apiConfig: {
-            ...this.defaultConfig.apiConfig,
-            ...(loadedConfig.apiConfig || {})
-          }
-        };
-      } else {
-        throw new Error();
+      const savedConfig = localStorage.getItem(this.storageKey)
+      if (savedConfig) {
+        this.config = JSON.parse(savedConfig)
       }
-    } catch {
-      this.config = { ...this.defaultConfig };
+    } catch (error) {
+      console.error('加载配置失败:', error)
+      // 使用默认配置
+      this.config = { ...this.defaultConfig }
     }
-    this.isConfigLoaded = true;
   }
 
   /**
-   * 保存配置到文件
-   * @returns {Promise<void>}
-   * @throws {Error} 保存失败时抛出错误
+   * 保存配置到 localStorage
    */
   private async saveConfig(): Promise<void> {
     try {
-      const result = await window.electronAPI.writeConfig(
-        this.configPath,
-        JSON.stringify(this.config, null, 2)
-      );
-      if (!result.success) {
-        throw new Error('保存配置失败');
-      }
+      localStorage.setItem(this.storageKey, JSON.stringify(this.config))
     } catch (error) {
-      throw error;
+      console.error('保存配置失败:', error)
+      throw error
     }
   }
 }

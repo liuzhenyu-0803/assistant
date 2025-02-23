@@ -6,7 +6,6 @@
 import OpenAI from 'openai'
 import { 
   APIProvider, 
-  Model, 
   ProviderConfig,
   APIConfig,
   ChatCompletionParams,
@@ -22,13 +21,22 @@ const PROVIDER_CONFIGS: Record<APIProvider, ProviderConfig> = {
     name: 'openrouter',
     endpoint: 'https://openrouter.ai/api/v1',
     modelsUrl: 'https://openrouter.ai/api/v1/models'
+  },
+  moonshot: {
+    name: 'moonshot',
+    endpoint: 'https://api.moonshot.cn/v1',
+    // 月之暗面目前只支持这几个固定的模型
+    supportedModels: [
+      'moonshot-v1-8k',
+      'moonshot-v1-32k',
+      'moonshot-v1-128k'
+    ]
   }
 }
 
 /**
  * 获取当前API配置
  * @returns {APIConfig} API配置
- * @throws {Error} 如果配置尚未加载完成则抛出错误
  */
 function getConfig(): APIConfig {
   const config = configService.getConfig();
@@ -39,52 +47,81 @@ function getConfig(): APIConfig {
  * 获取可用的模型列表
  * @returns 模型列表
  */
-export const getModelsList = async (): Promise<Model[]> => {
+export const getModelsList = async (): Promise<string[]> => {
   const apiConfig = getConfig()
   const providerConfig = PROVIDER_CONFIGS[apiConfig.provider]
-  const baseURL = providerConfig.modelsUrl
+  
+  console.log('Getting models for provider:', apiConfig.provider)
+  console.log('Provider config:', providerConfig)
 
+  // 月之暗面直接返回支持的模型列表
+  if (apiConfig.provider === 'moonshot') {
+    console.log('Using static model list for Moonshot:', providerConfig.supportedModels)
+    return providerConfig.supportedModels || []
+  }
+
+  // OpenRouter 通过 API 获取模型列表
   try {
-    const response = await fetch(baseURL, {
+    if (!providerConfig.modelsUrl) {
+      console.error('No models URL configured for provider:', apiConfig.provider)
+      return []
+    }
+
+    console.log('Fetching OpenRouter models from:', providerConfig.modelsUrl)
+    console.log('Using API Key:', apiConfig.apiKey ? apiConfig.apiKey.substring(0, 4) + '...' : 'none')
+    
+    const response = await fetch(providerConfig.modelsUrl, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiConfig.apiKey}`
+        'Authorization': `Bearer ${apiConfig.apiKey}`,
+        'HTTP-Referer': 'http://localhost:5173',
+        'X-Title': 'AI Assistant'
       }
     })
 
+    console.log('Response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error()
+      const error = await response.text()
+      console.error('OpenRouter API error:', error)
+      throw new Error('获取模型列表失败')
     }
 
-    const data = await response.json()
-    if (!data.data) {
-      throw new Error()
+    const text = await response.text()
+    console.log('Raw response text:', text)
+    
+    const data = JSON.parse(text)
+    console.log('Parsed response:', JSON.stringify(data, null, 2))
+
+    // OpenRouter API 返回格式: { data: [{ id: string, name: string, ... }] }
+    if (data.data && Array.isArray(data.data)) {
+      const models = data.data.map((model: any) => model.id)
+      console.log('Extracted model IDs:', models)
+      return models
+    } else {
+      console.error('Unexpected OpenRouter response format:', data)
+      return []
     }
-    return data.data
   } catch (error) {
-    throw new APIError('获取模型列表失败', 'error')
+    console.error('获取模型列表失败:', error)
+    return []
   }
 }
-
-// OpenAI 客户端实例
-let openaiClient: OpenAI | null = null
 
 // 获取或创建 OpenAI 客户端
 const getOpenAIClient = () => {
   const config = getConfig()
   
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      baseURL: PROVIDER_CONFIGS[config.provider].endpoint,
-      apiKey: config.apiKey,
-      defaultHeaders: {
-        'HTTP-Referer': 'http://localhost:5173',
-        'X-Title': 'AI Assistant',
-      },
-      dangerouslyAllowBrowser: true
-    })
-  }
-  
-  return openaiClient
+  return new OpenAI({
+    baseURL: PROVIDER_CONFIGS[config.provider].endpoint,
+    apiKey: config.apiKey,
+    defaultHeaders: config.provider === 'moonshot' ? {} : {
+      'HTTP-Referer': 'http://localhost:5173',
+      'X-Title': 'AI Assistant',
+    },
+    dangerouslyAllowBrowser: true
+  })
 }
 
 /**
@@ -93,6 +130,9 @@ const getOpenAIClient = () => {
  * @returns 如果是非流式调用，返回完整的响应文本；如果是流式调用，返回 void
  */
 export const getResponse = async (params: ChatCompletionParams): Promise<string | void> => {
+
+  console.log('getResponse:', params.model)
+
   try {
     const client = getOpenAIClient()
     
@@ -101,54 +141,39 @@ export const getResponse = async (params: ChatCompletionParams): Promise<string 
       messages: params.messages,
       stream: params.stream,
       temperature: params.temperature,
-      max_tokens: params.maxTokens,
+      max_tokens: params.maxTokens
     }
-    
+
     if (params.stream) {
       const stream = await client.chat.completions.create({
         ...requestParams,
-        stream: true,
+        stream: params.stream
       })
-
-      // 如果提供了 signal，添加中止处理
-      if (params.signal) {
-        params.signal.addEventListener('abort', () => {
-          stream.controller.abort()
-          throw new APIError('请求已取消', 'abort')
-        })
-      }
-
+      
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content
-        if (content && params.onChunk) {
+        const content = chunk.choices[0]?.delta?.content || ''
+        if (params.onChunk) {
           params.onChunk(content, false)
         }
       }
 
       if (params.onChunk) {
-        params.onChunk("", true)
+        params.onChunk('', true)
       }
+    } else {
+      const response = await client.chat.completions.create({
+        ...requestParams,
+        stream: false
+      })
 
-      return
-    }
+      console.log('API 响应:', response)
 
-    const completion = await client.chat.completions.create({
-      ...requestParams,
-      stream: false,
-    })
-    console.log("API 响应:", completion)
-    
-    if (!completion?.choices?.length) {
-      throw new Error('API 响应格式错误：未找到有效的响应内容')
+      return response.choices[0]?.message?.content || ''
     }
-    
-    const content = completion.choices[0]?.message?.content
-    if (!content) {
-      throw new Error('API 响应格式错误：响应内容为空')
-    }
-    
-    return content
   } catch (error) {
-    throw error
+    if (error instanceof Error) {
+      throw new APIError(error.message)
+    }
+    throw new APIError('未知错误')
   }
 }
