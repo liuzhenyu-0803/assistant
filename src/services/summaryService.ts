@@ -5,8 +5,8 @@
 import { Message, Summary } from '../types'
 import { ChatMessage } from '../types/models/message'
 import { APIError } from '../types/services/api'
-import { configService } from './configService'
-import { getResponse } from './apiService'
+// import { configService } from './configService'
+import { getResponse } from './zhipuService'
 
 class SummaryService {
   private summary: Summary | null = null
@@ -138,11 +138,8 @@ class SummaryService {
       apiMessages
     })
 
-    const config = configService.getConfig()
     const response = await getResponse({
       messages: apiMessages,
-      model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
-      stream: false,
       signal
     })
 

@@ -169,22 +169,6 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     saveConfigAndLoadModels({ selectedModels: newSelectedModels })
   }, [state.apiProvider, state.selectedModels, saveConfigAndLoadModels])
 
-  // 处理下拉菜单打开关闭时的滚动
-  const handleMenuOpen = useCallback(() => {
-    const scrollY = window.scrollY
-    document.body.style.position = 'fixed'
-    document.body.style.width = '100%'
-    document.body.style.top = `-${scrollY}px`
-  }, [])
-
-  const handleMenuClose = useCallback(() => {
-    const scrollY = document.body.style.top
-    document.body.style.position = ''
-    document.body.style.width = ''
-    document.body.style.top = ''
-    window.scrollTo(0, parseInt(scrollY || '0') * -1)
-  }, [])
-
   // 初始化加载
   useEffect(() => {
     loadConfig()
