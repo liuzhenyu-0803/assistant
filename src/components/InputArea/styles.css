@@ -117,85 +117,109 @@
   color: #ff4d4f;  /* 错误红色 */
 }
 
-/* 工具栏右侧区域 */
+/* 工具栏右侧按钮组 */
 .toolbar-right {
   display: flex;
+  align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
-/* 图标按钮基础样式 */
+/* 工具栏按钮 */
 .icon-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: #8b7dc7;  /* 次主题色 */
-  cursor: pointer;
-  /* 居中对齐图标 */
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 过渡动画 */
-  transition: all 0.2s ease-in-out;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
 }
 
-/* 按钮悬停效果 */
-.icon-button:hover:not(:disabled) {
-  background: rgba(139, 125, 199, 0.1);  /* 半透明背景 */
-  color: #fff;
+/* 发送/停止按钮容器 */
+.action-button-container {
+  width: 32px;
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
-/* 按钮激活状态 */
-.icon-button:active:not(:disabled) {
-  background: rgba(139, 125, 199, 0.2);
-  transform: scale(0.95);  /* 轻微缩小效果 */
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
-/* 按钮禁用状态 */
-.icon-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.icon-button:active {
+  transform: scale(0.95);
 }
 
-/* 发送按钮样式 */
+.icon-button .icon {
+  width: 20px;
+  height: 20px;
+  color: #666;
+  filter: invert(0.4);
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover .icon {
+  color: #333;
+  filter: invert(0.6);
+}
+
+/* 发送按钮特殊样式 */
 .send-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: #8b7dc7;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease-in-out;
+  background: #4a3b89;
 }
 
-/* 发送按钮悬停效果 */
-.send-button:hover:not(:disabled) {
-  background-color: rgba(74, 59, 137, 0.15);
-  color: #9d8fe0;
+.send-button .icon {
+  filter: invert(1);
 }
 
-/* 发送按钮禁用状态 */
-.send-button:disabled {
-  color: rgba(255, 255, 255, 0.25);
+.send-button:hover {
+  background: #5c4ba1;
+}
+
+.send-button:hover .icon {
+  filter: invert(1);
+}
+
+/* 停止按钮特殊样式 */
+.stop-button {
+  background: #ff4d4f;
+}
+
+.stop-button .icon {
+  filter: invert(1);
+}
+
+.stop-button:hover {
+  background: #ff7875;
+}
+
+.stop-button:hover .icon {
+  filter: invert(1);
+}
+
+/* 禁用状态 */
+.icon-button:disabled {
   cursor: not-allowed;
+  opacity: 0.5;
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
-/* 发送按钮发送中状态 */
-.send-button.receiving {
-  color: #ff4d4f;
+.icon-button:disabled:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  transform: none;
 }
 
-/* 发送按钮发送中悬停效果 */
-.send-button.receiving:hover {
-  background-color: rgba(255, 77, 79, 0.15);
-  color: #ff7875;
+.icon-button:disabled .icon {
+  filter: invert(0.8) !important;
 }
 
 /* 响应式布局 */

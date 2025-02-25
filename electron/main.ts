@@ -16,6 +16,7 @@
 import { app, BrowserWindow, globalShortcut } from 'electron'
 import { APP_CONFIG, IS_MAC } from './config'
 import { IPCHandler } from './ipc'
+import ToolManager from './tools/toolManager'
 
 /**
  * 主应用程序类
@@ -32,6 +33,10 @@ class MainApp {
   public async init(): Promise<void> {
     try {
       await app.whenReady()
+      
+      // 初始化工具管理器
+      ToolManager.getInstance().initializeTools();
+      
       this.registerApplicationEvents()
       IPCHandler.init()
       await this.createWindow()

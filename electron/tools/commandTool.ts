@@ -1,6 +1,6 @@
-import { exec } from 'child_process'
-import { Tool, ToolDescription, ToolResult } from './toolManager'
-import * as iconv from 'iconv-lite'
+import { exec } from 'child_process';
+import { Tool, ToolDescription, ToolResult } from './toolManager';
+import * as iconv from 'iconv-lite';
 
 /**
  * 命令行工具
@@ -22,7 +22,7 @@ class CommandTool implements Tool {
           required: true
         }
       ]
-    }
+    };
   }
 
   /**
@@ -36,56 +36,51 @@ class CommandTool implements Tool {
         resolve({
           success: false,
           error: 'Command is required and must be a string'
-        })
-        return
+        });
+        return;
       }
 
       // 使用TypeScript断言解决类型问题
       const options = process.platform === 'win32' 
         ? { encoding: 'buffer' } as { encoding: 'buffer' }
-        : {}
+        : {};
       
       exec(params.command, options, (error: any, stdout: any, stderr: any) => {
         // 处理输出编码
-        let stdoutStr = ''
-        let stderrStr = ''
-        
-        // 在Windows系统上将GBK编码转换为UTF-8
+        let stdoutStr = '';
+        let stderrStr = '';
+
         if (process.platform === 'win32') {
-          if (Buffer.isBuffer(stdout)) {
-            stdoutStr = iconv.decode(stdout, 'cp936')
-          }
-          if (Buffer.isBuffer(stderr)) {
-            stderrStr = iconv.decode(stderr, 'cp936')
-          }
+          // Windows 下需要处理 GBK 编码
+          stdoutStr = iconv.decode(stdout, 'cp936');
+          stderrStr = iconv.decode(stderr, 'cp936');
         } else {
-          // 非Windows系统，直接使用stdout和stderr
-          stdoutStr = String(stdout)
-          stderrStr = String(stderr)
+          // 其他平台默认 UTF-8
+          stdoutStr = stdout.toString();
+          stderrStr = stderr.toString();
         }
-        
+
         if (error) {
           resolve({
             success: false,
-            error: error.message,
+            error: stderrStr || error.message,
             data: {
               stdout: stdoutStr,
               stderr: stderrStr
             }
-          })
-          return
+          });
+        } else {
+          resolve({
+            success: true,
+            data: {
+              stdout: stdoutStr,
+              stderr: stderrStr
+            }
+          });
         }
-
-        resolve({
-          success: true,
-          data: {
-            stdout: stdoutStr,
-            stderr: stderrStr
-          }
-        })
-      })
-    })
+      });
+    });
   }
 }
 
-export default CommandTool
+export default CommandTool;

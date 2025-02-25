@@ -1,91 +1,114 @@
-import { exec } from 'child_process'
-import { Tool, ToolDescription, ToolResult } from './toolManager'
-import * as iconv from 'iconv-lite'
+/**
+ * 工具接口定义
+ */
+export interface Tool {
+  getDescription(): ToolDescription;
+  execute(params: any): Promise<ToolResult>;
+}
 
 /**
- * 命令行工具
- * 用于执行系统命令
+ * 工具描述接口
  */
-class CommandTool implements Tool {
-  /**
-   * 获取工具描述
-   */
-  public getDescription(): ToolDescription {
-    return {
-      name: 'execute_command',
-      description: '执行系统命令行指令',
-      parameters: [
-        {
-          name: 'command',
-          type: 'string',
-          description: '要执行的命令',
-          required: true
-        }
-      ]
-    }
+export interface ToolDescription {
+  name: string;
+  description: string;
+  parameters: ToolParameter[];
+}
+
+/**
+ * 工具参数接口
+ */
+export interface ToolParameter {
+  name: string;
+  type: string;
+  description: string;
+  required: boolean;
+}
+
+/**
+ * 工具执行结果接口
+ */
+export interface ToolResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}
+
+/**
+ * 工具管理器
+ */
+class ToolManager {
+  private static instance: ToolManager;
+  private tools: Map<string, Tool>;
+
+  private constructor() {
+    this.tools = new Map();
   }
 
   /**
-   * 执行命令
-   * @param params 命令参数
+   * 初始化工具
+   * 在这里创建和注册所有默认工具
    */
-  public execute(params: { command: string }): Promise<ToolResult> {
-    return new Promise((resolve) => {
-      // 验证必需参数
-      if (!params || !params.command || typeof params.command !== 'string') {
-        resolve({
-          success: false,
-          error: 'Command is required and must be a string'
-        })
-        return
-      }
+  initializeTools(): void {
+    // 动态导入 CommandTool
+    import('./commandTool').then(({ default: CommandTool }) => {
+      const commandTool = new CommandTool();
+      this.registerTool(commandTool);
+    }).catch(error => {
+      console.error('Failed to initialize CommandTool:', error);
+    });
+  }
 
-      // 使用TypeScript断言解决类型问题
-      const options = process.platform === 'win32' 
-        ? { encoding: 'buffer' } as { encoding: 'buffer' }
-        : {}
-      
-      exec(params.command, options, (error: any, stdout: any, stderr: any) => {
-        // 处理输出编码
-        let stdoutStr = ''
-        let stderrStr = ''
-        
-        // 在Windows系统上将GBK编码转换为UTF-8
-        if (process.platform === 'win32') {
-          if (Buffer.isBuffer(stdout)) {
-            stdoutStr = iconv.decode(stdout, 'cp936')
-          }
-          if (Buffer.isBuffer(stderr)) {
-            stderrStr = iconv.decode(stderr, 'cp936')
-          }
-        } else {
-          // 非Windows系统，直接使用stdout和stderr
-          stdoutStr = String(stdout)
-          stderrStr = String(stderr)
-        }
-        
-        if (error) {
-          resolve({
-            success: false,
-            error: error.message,
-            data: {
-              stdout: stdoutStr,
-              stderr: stderrStr
-            }
-          })
-          return
-        }
+  public static getInstance(): ToolManager {
+    if (!ToolManager.instance) {
+      ToolManager.instance = new ToolManager();
+    }
+    return ToolManager.instance;
+  }
 
-        resolve({
-          success: true,
-          data: {
-            stdout: stdoutStr,
-            stderr: stderrStr
-          }
-        })
-      })
-    })
+  /**
+   * 注册工具
+   */
+  public registerTool(tool: Tool): void {
+    const description = tool.getDescription();
+    this.tools.set(description.name, tool);
+  }
+
+  /**
+   * 获取工具
+   */
+  public getTool(name: string): Tool | undefined {
+    return this.tools.get(name);
+  }
+
+  /**
+   * 获取所有工具描述
+   */
+  public getAllToolDescriptions(): ToolDescription[] {
+    return Array.from(this.tools.values()).map(tool => tool.getDescription());
+  }
+
+  /**
+   * 执行工具
+   */
+  public async executeTool(name: string, params: any): Promise<ToolResult> {
+    const tool = this.tools.get(name);
+    if (!tool) {
+      return {
+        success: false,
+        error: `Tool '${name}' not found`
+      };
+    }
+
+    try {
+      return await tool.execute(params);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 }
 
-export default CommandTool
+export default ToolManager;

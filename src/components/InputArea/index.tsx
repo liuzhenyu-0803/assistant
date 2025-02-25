@@ -30,7 +30,7 @@
 import React, { useState, useRef } from 'react'
 import { InputAreaProps } from '../../types'
 import { cleanText, isEmptyText } from '../../utils/helpers'
-import { SendIcon, StopIcon, SettingsIcon, ClearIcon } from '../icons'
+import Icon from '../Icon'
 import './styles.css'
 
 /**
@@ -138,7 +138,7 @@ function InputArea({
             onClick={onOpenSettings}
             title="设置"
           >
-            <SettingsIcon />
+            <Icon type="settings" />
           </button>
           {/* 清空会话按钮 */}
           <button 
@@ -146,27 +146,19 @@ function InputArea({
             onClick={onClearMessages}
             title="清空会话"
           >
-            <ClearIcon />
+            <Icon type="clear" />
           </button>
-          {/* 停止/发送按钮（根据状态切换） */}
-          {(isWaiting || isReceiving) ? (
-            <button 
-              className="icon-button"
-              onClick={onAbortMessageReceiving}
-              title="停止生成"
+          {/* 发送/停止按钮容器 */}
+          <div className="action-button-container">
+            <button
+              className={`icon-button ${(isWaiting || isReceiving) ? 'stop-button' : 'send-button'}`}
+              onClick={(isWaiting || isReceiving) ? onAbortMessageReceiving : handleSend}
+              disabled={message.trim().length === 0 && !isReceiving && !isWaiting}
+              title={(isWaiting || isReceiving) ? '停止接收' : '发送消息'}
             >
-              <StopIcon />
+              <Icon type={(isWaiting || isReceiving) ? 'stop' : 'send'} />
             </button>
-          ) : (
-            <button 
-              className="icon-button"
-              onClick={handleSend}
-              title="发送"
-              disabled={isEmptyText(cleanText(message))}
-            >
-              <SendIcon />
-            </button>
-          )}
+          </div>
         </div>
       </div>
     </div>
