@@ -10,7 +10,7 @@
  * - 管理进程间通信
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-17
+ * @lastModified 2025-02-25
  */
 
 import { app, BrowserWindow, globalShortcut } from 'electron'
