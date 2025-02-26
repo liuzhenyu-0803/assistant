@@ -3,12 +3,12 @@
  * 消息项样式
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-16
+ * @lastModified 2025-02-26
  */
 
 .message-item {
   display: flex;
-  padding: 12px 20px;
+  padding: 12px 0;
   line-height: 1.5;
   width: 100%;
   box-sizing: border-box;

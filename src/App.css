@@ -5,6 +5,7 @@
   flex-direction: column;
   padding: 16px;
   align-items: center;
+  gap: 24px;
 }
 
 .app > .message-list,
@@ -12,6 +13,16 @@
   width: 100%;
   max-width: 800px;
 }
+
+/* 
+ * 消息列表右侧添加20px内边距，与输入区域样式中设置的右侧内边距保持一致性
+ * 避免滚动条遮挡消息气泡
+ */
+.app > .message-list {
+  padding-right: 20px;
+}
+
+/* 注意：输入区域在其样式文件中已设置右内边距为20px */
 
 .loading-container {
   display: flex;
