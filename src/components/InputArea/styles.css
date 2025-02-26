@@ -147,7 +147,7 @@
 /* 发送/停止按钮容器 */
 .action-button-container {
   width: 32px;
-  margin-left: 8px;
+  margin-left: 0px;
   flex-shrink: 0;
 }
 
@@ -174,36 +174,36 @@
 
 /* 发送按钮特殊样式 */
 .send-button {
-  background: #4a3b89;
+  background: transparent;
 }
 
 .send-button .icon {
-  filter: invert(1);
+  filter: invert(0.4);
 }
 
 .send-button:hover {
-  background: #5c4ba1;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .send-button:hover .icon {
-  filter: invert(1);
+  filter: invert(0.6);
 }
 
 /* 停止按钮特殊样式 */
 .stop-button {
-  background: #ff4d4f;
+  background: transparent;
 }
 
 .stop-button .icon {
-  filter: invert(1);
+  filter: invert(0.4);
 }
 
 .stop-button:hover {
-  background: #ff7875;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .stop-button:hover .icon {
-  filter: invert(1);
+  filter: invert(0.6);
 }
 
 /* 禁用状态 */

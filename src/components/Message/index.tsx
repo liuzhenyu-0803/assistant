@@ -16,14 +16,24 @@ interface MessageProps {
 }
 
 export const Message: React.FC<MessageProps> = ({ message }) => {
-  const content = message.role === 'assistant' && message.status === 'waiting' 
-    ? '正在思考...' 
-    : message.content
+  let displayContent = message.content
+
+  // 处理不同状态的消息显示
+  if (message.role === 'assistant') {
+    if (message.status === 'waiting') {
+      displayContent = '正在思考...'
+    } else if (message.status === 'error') {
+      // 显示错误消息并添加样式
+      displayContent = `**发生错误** 😢\n\n\`\`\`\n${message.error || '未知错误'}\n\`\`\``
+    } else if (message.status === 'aborted') {
+      displayContent = '**已中断请求** ⚠️'
+    }
+  }
 
   return (
-    <div className={`message-item ${message.role}`}>
+    <div className={`message-item ${message.role} ${message.status === 'error' ? 'error' : ''}`}>
       <div className="message-content">
-        {typeof content === 'string' ? (
+        {typeof displayContent === 'string' ? (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -44,9 +54,9 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
               }
             }}
           >
-            {content}
+            {displayContent}
           </ReactMarkdown>
-        ) : content}
+        ) : displayContent}
       </div>
     </div>
   )

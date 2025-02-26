@@ -24,7 +24,7 @@
  *    - 字数超限状态
  * 
  * @author AI助手开发团队
- * @lastModified 2025-02-19
+ * @lastModified 2025-02-26
  */
 
 import React, { useState, useRef } from 'react'
@@ -36,57 +36,60 @@ import './styles.css'
 /**
  * 输入区组件
  * @param {Function} onSendMessage - 发送消息的回调函数
- * @param {Function} onAbortMessageReceiving - 中止消息接收的回调函数
+ * @param {Function} onAbort - 中止消息接收的回调函数
  * @param {Function} onOpenSettings - 打开设置面板的回调函数
- * @param {Function} onClearMessages - 清空所有消息的回调函数
- * @param {boolean} isWaiting - 是否正在等待 AI 响应
- * @param {boolean} isReceiving - 是否正在接收消息
- * @param {number} maxLength - 最大允许字数，默认5000
- * @param {boolean} disabled - 是否禁用输入区
- * @param {string} placeholder - 输入框占位文本
+ * @param {Function} onClearConversation - 清空所有消息的回调函数
+ * @param {string} status - 当前聊天状态
+ * @param {number} maxLength - 输入框最大字符数
+ * @param {boolean} disabled - 是否禁用输入框
+ * @param {string} placeholder - 输入框占位符文本
  */
-function InputArea({ 
-  onSendMessage, 
-  onAbortMessageReceiving,
+export function InputArea({
+  onSendMessage,
+  onAbort,
   onOpenSettings,
-  onClearMessages,
-  isWaiting,
-  isReceiving,
-  maxLength = 5000,
+  onClearConversation,
+  status,
+  maxLength = 4000,
   disabled = false,
-  placeholder = '按 Enter 发送，Shift + Enter 换行'
+  placeholder = '输入消息，Shift+Enter换行, Enter发送...'
 }: InputAreaProps) {
-  // 消息内容状态
-  const [message, setMessage] = useState('')
-  // 添加输入框引用
+
+  // 输入框内容状态
+  const [message, setMessage] = useState<string>('')
+  
+  // 输入框引用，用于获取焦点
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   /**
-   * 处理文本变化
-   * 实时更新文本内容，同时确保不超过最大长度限制
-   * @param {React.ChangeEvent<HTMLTextAreaElement>} e - 文本变化事件
+   * 处理消息变更，更新输入框内容状态
+   * @param {React.ChangeEvent<HTMLTextAreaElement>} e - 变更事件
    */
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value
-    if (newValue.length <= maxLength) {
-      setMessage(newValue)
-    }
+    setMessage(e.target.value)
   }
 
   /**
    * 处理消息发送
-   * 1. 清理文本（去除多余空格等）
-   * 2. 验证文本是否为空
-   * 3. 检查组件是否处于可发送状态
-   * 4. 发送成功后清空输入框并保持焦点
+   * 清理文本，验证非空，调用回调函数，清空输入框
    */
   const handleSend = async () => {
+    // 如果正在接收消息，则不允许发送新消息
+    if (status === 'receiving' || status === 'waiting') return
+    
+    // 清理文本（去除多余空格等）
     const cleanedMessage = cleanText(message)
-    if (!isEmptyText(cleanedMessage) && !isWaiting && !isReceiving) {
+    
+    // 验证消息非空
+    if (!isEmptyText(cleanedMessage)) {
       try {
-        setMessage('') // 先清空内容，提供更好的用户体验
+        // 清空输入框
+        setMessage('')
+        
+        // 调用发送回调
         await onSendMessage(cleanedMessage)
-        // 重新聚焦输入框
+        
+        // 恢复输入框焦点
         inputRef.current?.focus()
       } catch {
         // 错误处理由父组件负责，保持组件职责单一
@@ -109,6 +112,9 @@ function InputArea({
 
   // 检查是否超出字数限制
   const isOverLimit = message.length > maxLength
+  
+  // 是否正在接收或等待响应
+  const isReceiving = status === 'receiving' || status === 'waiting'
 
   return (
     <div className="input-area">
@@ -118,7 +124,7 @@ function InputArea({
         value={message}
         onChange={handleMessageChange}
         onKeyDown={handleKeyDown}
-        placeholder={isWaiting ? '正在等待 AI 响应...' : placeholder}
+        placeholder={status === 'waiting' ? '正在等待 AI 响应...' : placeholder}
         rows={3}
         className={`edit-box ${isOverLimit ? 'over-length' : ''}`}
       />
@@ -143,22 +149,20 @@ function InputArea({
           {/* 清空会话按钮 */}
           <button 
             className="icon-button"
-            onClick={onClearMessages}
+            onClick={onClearConversation}
             title="清空会话"
           >
             <Icon type="clear" />
           </button>
-          {/* 发送/停止按钮容器 */}
-          <div className="action-button-container">
-            <button
-              className={`icon-button ${(isWaiting || isReceiving) ? 'stop-button' : 'send-button'}`}
-              onClick={(isWaiting || isReceiving) ? onAbortMessageReceiving : handleSend}
-              disabled={message.trim().length === 0 && !isReceiving && !isWaiting}
-              title={(isWaiting || isReceiving) ? '停止接收' : '发送消息'}
-            >
-              <Icon type={(isWaiting || isReceiving) ? 'stop' : 'send'} />
-            </button>
-          </div>
+          {/* 发送/停止按钮 */}
+          <button
+            className={`icon-button ${isReceiving ? 'stop-button' : 'send-button'}`}
+            onClick={isReceiving ? onAbort : handleSend}
+            disabled={message.trim().length === 0 && !isReceiving}
+            title={isReceiving ? '停止接收' : '发送消息'}
+          >
+            <Icon type={isReceiving ? 'stop' : 'send'} />
+          </button>
         </div>
       </div>
     </div>

@@ -7,42 +7,44 @@ import { Message, ChatMessage } from '../types'
 import { configService } from './configService'
 import { getResponse } from './apiService'
 import { APIError } from '../types/services/api'
-import { summaryService } from './summaryService'
 
 /**
  * 处理消息发送的完整流程
  * @param content 用户输入的消息内容
+ * @param messages 历史消息列表，已包含当前用户消息
  * @param onMessage 消息状态更新的回调函数
  * @param signal 用于取消请求的信号
  * @returns Promise<void>
  */
 export const handleMessageSend = async (
   content: string,
+  messages: Message[],
   onMessage: (update: { content: string, status: Message['status'], error?: string }) => void,
   signal?: AbortSignal
 ): Promise<void> => {
   let responseContent = ''
 
   try {
-    const messages: ChatMessage[] = []
+    const contextMessages: ChatMessage[] = []
 
-    const currentSummary = summaryService.getSummary()
-    if (currentSummary) {
-      messages.push({
-        role: 'system' as const,
-        content: '以下是之前对话的摘要，请在回答时考虑这些上下文：\n\n' + 
-                `${currentSummary.content}`
+    // 使用最近的20条消息作为上下文（已包含当前用户消息）
+    const recentMessages = messages.slice(-20)
+    
+    // 将最近的消息转换为API所需的格式
+    recentMessages.forEach(msg => {
+      contextMessages.push({
+        role: msg.role,
+        content: msg.content
       })
-    }
+    })
 
-    messages.push({ role: 'user' as const, content })
-
-    // 打印messages
-    console.log('发送的消息列表:', messages)
+    // 不再重复添加当前用户消息，因为messages中已经包含了
+    // 打印消息列表
+    console.log('发送的消息列表:', contextMessages)
 
     const config = configService.getConfig()
     await getResponse({
-      messages,
+      messages: contextMessages,
       model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
       stream: true,
       onChunk: (chunk, done) => {

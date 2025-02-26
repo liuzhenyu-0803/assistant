@@ -5,7 +5,8 @@
 
 // 数据模型层
 export * from './models/message'  // 消息相关类型
-export * from './models/summary'  // 摘要相关类型
+// 移除摘要相关类型的导出
+// export * from './models/summary'  // 摘要相关类型
 
 // 服务层
 export * from './services/api'    // API相关类型

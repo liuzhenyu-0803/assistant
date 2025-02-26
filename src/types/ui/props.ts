@@ -2,22 +2,20 @@
  * UI 组件属性相关的类型定义
  */
 
-import { Message } from '../models/message'
+import { Message, MessageStatus } from '../models/message'
 
 /** 输入区属性接口 */
 export interface InputAreaProps {
   /** 发送消息的回调函数 */
   onSendMessage: (message: string) => Promise<void>
   /** 终止消息接收的回调函数 */
-  onAbortMessageReceiving: () => void
+  onAbort: () => void
   /** 打开设置的回调函数 */
   onOpenSettings: () => void
-  /** 清空消息的回调函数 */
-  onClearMessages: () => void
-  /** 是否正在等待 AI 首次响应 */
-  isWaiting: boolean
-  /** 是否正在接收 AI 响应流 */
-  isReceiving: boolean
+  /** 清空对话的回调函数 */
+  onClearConversation: () => void
+  /** 当前聊天状态 */
+  status: MessageStatus
   /** 输入框最大长度 */
   maxLength?: number
   /** 是否禁用输入 */

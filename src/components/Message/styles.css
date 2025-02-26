@@ -50,6 +50,13 @@
               0 0 5px rgba(74, 59, 137, 0.2);
 }
 
+.message-item.assistant.error .message-content {
+  background-color: rgba(255, 77, 79, 0.15);
+  border: 1px solid rgba(255, 77, 79, 0.4);
+  box-shadow: 0 0 20px rgba(255, 77, 79, 0.1),
+              0 0 5px rgba(255, 77, 79, 0.2);
+}
+
 .message-content::before {
   content: '';
   position: absolute;
@@ -213,4 +220,3 @@
     padding: 0;
   }
 }
-

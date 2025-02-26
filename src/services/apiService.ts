@@ -132,16 +132,41 @@ export const getResponse = async ({
         stream: true
       })
       
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || ''
-        if (onChunk) {
-          onChunk(content, false)
+      try {
+        for await (const chunk of stream) {
+          // 检查是否已取消请求
+          if (signal?.aborted) {
+            console.log('请求已被中断');
+            stream.controller.abort();
+            break;
+          }
+          
+          const content = chunk.choices[0]?.delta?.content || ''
+          if (onChunk) {
+            onChunk(content, false)
+          }
         }
+        
+        // 只有在正常完成时才调用完成回调
+        if (!signal?.aborted && onChunk) {
+          onChunk('', true)
+        }
+      } catch (error) {
+        // 检查是否是取消请求导致的错误
+        if (signal?.aborted) {
+          console.log('流式请求已被终止');
+          throw new APIError({
+            status: 499, // 客户端关闭请求
+            message: '请求已被取消',
+            cause: error,
+            endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
+            provider: configService.getConfig().apiConfig.provider,
+            type: 'abort'
+          });
+        }
+        throw error; // 重新抛出其他错误
       }
-
-      if (onChunk) {
-        onChunk('', true)
-      }
+      
       return null
     } else {
       const response = await client.chat.completions.create({
@@ -152,6 +177,18 @@ export const getResponse = async ({
       return response.choices[0]?.message?.content || ''
     }
   } catch (error) {
+    // 检查是否是中断请求引起的错误
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new APIError({
+        status: 499,
+        message: '请求已被取消',
+        cause: error,
+        endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
+        provider: configService.getConfig().apiConfig.provider,
+        type: 'abort'
+      });
+    }
+    
     if (error instanceof Error) {
       throw new APIError({
         status: 500,
