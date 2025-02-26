@@ -77,32 +77,16 @@ export interface APIResponse {
 
 /** API 错误类 */
 export class APIError extends Error {
-  type: 'error' | 'abort'
-  status: number
-  cause: any
-  endpoint: string
-  provider: APIProvider
+  type: 'error' | 'abort' | 'unknown'
 
   constructor({
-    status,
     message,
-    cause,
-    endpoint,
-    provider,
     type = 'error'
   }: {
-    status: number
     message: string
-    cause: any
-    endpoint: string
-    provider: APIProvider
-    type?: 'error' | 'abort'
+    type?: 'error' | 'abort' | 'unknown'
   }) {
     super(message)
-    this.status = status
-    this.cause = cause
-    this.endpoint = endpoint
-    this.provider = provider
     this.type = type
     this.name = 'APIError'
   }

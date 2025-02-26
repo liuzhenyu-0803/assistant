@@ -156,11 +156,7 @@ export const getResponse = async ({
         if (signal?.aborted) {
           console.log('流式请求已被终止');
           throw new APIError({
-            status: 499, // 客户端关闭请求
             message: '请求已被取消',
-            cause: error,
-            endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
-            provider: configService.getConfig().apiConfig.provider,
             type: 'abort'
           });
         }
@@ -180,30 +176,20 @@ export const getResponse = async ({
     // 检查是否是中断请求引起的错误
     if (error instanceof Error && error.name === 'AbortError') {
       throw new APIError({
-        status: 499,
         message: '请求已被取消',
-        cause: error,
-        endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
-        provider: configService.getConfig().apiConfig.provider,
         type: 'abort'
       });
     }
     
     if (error instanceof Error) {
       throw new APIError({
-        status: 500,
         message: error.message,
-        cause: error,
-        endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
-        provider: configService.getConfig().apiConfig.provider
+        type: 'unknown'
       })
     }
     throw new APIError({
-      status: 500,
       message: 'Unknown error',
-      cause: error,
-      endpoint: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
-      provider: configService.getConfig().apiConfig.provider
+      type: 'unknown'
     })
   }
 }
