@@ -10,14 +10,12 @@ import { APIError } from '../types/services/api'
 
 /**
  * 处理消息发送的完整流程
- * @param content 用户输入的消息内容
  * @param messages 历史消息列表，已包含当前用户消息
  * @param onMessage 消息状态更新的回调函数
  * @param signal 用于取消请求的信号
  * @returns Promise<void>
  */
 export const handleMessageSend = async (
-  content: string,
   messages: Message[],
   onMessage: (update: { content: string, status: Message['status'], error?: string }) => void,
   signal?: AbortSignal

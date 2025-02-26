@@ -79,9 +79,8 @@ function App() {
     
     try {
       await handleMessageSend(
-        content,
         updatedMessages.slice(0, -1), 
-        ({ content, status, error }) => {
+        ({ content, status, error }: { content: string, status: Message['status'], error?: string }) => {
           setMessages(current => 
             current.map(msg => 
               msg.id === aiMessage.id 
