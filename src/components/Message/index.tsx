@@ -30,6 +30,83 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     }
   }
 
+  // 显示函数调用信息
+  if (message.function_call) {
+    // 生成函数调用的漂亮展示
+    const functionArgs = JSON.parse(message.function_call.arguments || '{}')
+    const functionContent = `**调用函数:** \`${message.function_call.name}\`\n\n**参数:**\n\`\`\`json\n${JSON.stringify(functionArgs, null, 2)}\n\`\`\``
+    
+    return (
+      <div className={`message-item ${message.role} function-call`}>
+        <div className="message-content">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              code({ className, children }) {
+                const match = /language-(\w+)/.exec(className || '')
+                return match ? (
+                  <SyntaxHighlighter
+                    style={dracula}
+                    language={match[1]}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code className={className}>
+                    {children}
+                  </code>
+                )
+              }
+            }}
+          >
+            {functionContent}
+          </ReactMarkdown>
+        </div>
+      </div>
+    )
+  }
+
+  // 显示函数执行结果
+  if (message.role === 'function') {
+    // 尝试解析 JSON 结果以美化显示
+    try {
+      const resultObject = JSON.parse(message.content)
+      const resultContent = `**函数执行结果:** \`${message.name}\`\n\n\`\`\`json\n${JSON.stringify(resultObject, null, 2)}\n\`\`\``
+      
+      return (
+        <div className="message-item function-result">
+          <div className="message-content">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code({ className, children }) {
+                  const match = /language-(\w+)/.exec(className || '')
+                  return match ? (
+                    <SyntaxHighlighter
+                      style={dracula}
+                      language={match[1]}
+                    >
+                      {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                  ) : (
+                    <code className={className}>
+                      {children}
+                    </code>
+                  )
+                }
+              }}
+            >
+              {resultContent}
+            </ReactMarkdown>
+          </div>
+        </div>
+      )
+    } catch (e) {
+      // 如果不是有效的 JSON，直接显示内容
+      displayContent = `**函数执行结果:** \`${message.name}\`\n\n${message.content}`
+    }
+  }
+
   return (
     <div className={`message-item ${message.role} ${message.status === 'error' ? 'error' : ''}`}>
       <div className="message-content">

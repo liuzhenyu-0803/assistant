@@ -9,7 +9,8 @@ import {
   ProviderConfig,
   APIConfig,
   ChatCompletionParams,
-  APIError
+  APIError,
+  ChatResponseMessage
 } from '../types'
 import { configService } from './configService'
 
@@ -103,7 +104,7 @@ const getOpenAIClient = () => {
 /**
  * 获取 API 响应
  * @param params 聊天补全参数
- * @returns 如果是非流式调用，返回完整的响应文本；如果是流式调用，返回 void
+ * @returns 如果是非流式调用，返回完整的响应文本或包含函数调用的对象；如果是流式调用，返回 void
  */
 export const getResponse = async ({
   messages,
@@ -112,12 +113,14 @@ export const getResponse = async ({
   signal,
   onChunk,
   temperature = 0.7,
-  maxTokens = 2000
-}: ChatCompletionParams): Promise<string | null> => {
+  maxTokens = 2000,
+  functions,
+  function_call
+}: ChatCompletionParams): Promise<string | null | ChatResponseMessage> => {
   try {
     const client = getOpenAIClient()
     
-    const requestParams = {
+    const requestParams: any = {
       model,
       messages,
       stream,
@@ -125,35 +128,49 @@ export const getResponse = async ({
       max_tokens: maxTokens,
       signal
     }
+    
+    // 添加函数调用参数
+    if (functions && functions.length > 0) {
+      requestParams.functions = functions;
+      if (function_call) {
+        requestParams.function_call = function_call;
+      }
+    }
 
     if (stream) {
-      const stream = await client.chat.completions.create({
+      const streamResponse = await client.chat.completions.create({
         ...requestParams,
         stream: true
       })
       
+      // OpenAI SDK 已经实现了 AsyncIterable 接口，但 TypeScript 不认识
+      // 这里我们使用类型断言帮助 TypeScript 理解
+      const stream = streamResponse as unknown as AsyncIterable<any> & { controller?: { abort: () => void } }
+      
       try {
         for await (const chunk of stream) {
           // 检查是否已取消请求
-          if (signal?.aborted) {
+          if (signal && signal.aborted) {
             console.log('请求已被中断');
-            stream.controller.abort();
+            if (stream.controller) {
+              stream.controller.abort();
+            }
             break;
           }
           
-          const content = chunk.choices[0]?.delta?.content || ''
+          const content = chunk.choices?.[0]?.delta?.content || ''
           if (onChunk) {
             onChunk(content, false)
           }
         }
         
         // 只有在正常完成时才调用完成回调
-        if (!signal?.aborted && onChunk) {
+        if (signal && !signal.aborted && onChunk) {
           onChunk('', true)
         }
       } catch (error) {
         // 检查是否是取消请求导致的错误
-        if (signal?.aborted) {
+        if (signal && signal.aborted) {
           console.log('流式请求已被终止');
           throw new APIError({
             message: '请求已被取消',
@@ -170,7 +187,20 @@ export const getResponse = async ({
         stream: false
       })
 
-      return response.choices[0]?.message?.content || ''
+      const message = response.choices?.[0]?.message;
+      if (message?.function_call) {
+        // 返回函数调用信息
+        return {
+          role: 'assistant',
+          content: message.content,
+          function_call: {
+            name: message.function_call.name,
+            arguments: message.function_call.arguments
+          }
+        };
+      }
+
+      return message?.content || ''
     }
   } catch (error) {
     // 检查是否是中断请求引起的错误

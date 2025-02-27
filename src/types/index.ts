@@ -11,6 +11,7 @@ export * from './models/message'  // 消息相关类型
 // 服务层
 export * from './services/api'    // API相关类型
 export * from './services/config' // 配置相关类型
+export * from './services/functions' // Function Calling相关类型
 
 // UI层
 export * from './ui/props'        // 组件属性类型

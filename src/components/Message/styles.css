@@ -166,6 +166,42 @@
   height: auto;
 }
 
+/* 函数调用样式 */
+.message-item.function-call {
+  border-left: 4px solid #9c27b0; /* 紫色左边框 */
+  background-color: rgba(156, 39, 176, 0.05);
+}
+
+.message-item.function-call .message-content {
+  color: #333;
+}
+
+/* 函数执行结果样式 */
+.message-item.function-result {
+  border-left: 4px solid #2196f3; /* 蓝色左边框 */
+  background-color: rgba(33, 150, 243, 0.05);
+  margin: 10px 0 10px 20px;
+}
+
+.message-item.function-result .message-content {
+  color: #333;
+}
+
+/* 代码块美化 */
+.message-item.function-call pre,
+.message-item.function-result pre {
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+/* 函数名称高亮 */
+.message-item.function-call code,
+.message-item.function-result code {
+  color: #e91e63;
+  background-color: rgba(233, 30, 99, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
 
 .message-time {
   font-size: 12px;

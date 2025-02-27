@@ -3,6 +3,7 @@
  */
 
 import { ChatMessage } from '../models/message'
+import { FunctionDefinition } from './functions'
 
 /** API 提供商类型 */
 export type APIProvider = 'openrouter' | 'siliconflow'
@@ -45,6 +46,10 @@ export interface ChatCompletionParams {
   temperature?: number
   /** 最大token数 */
   maxTokens?: number
+  /** 函数定义列表 */
+  functions?: FunctionDefinition[]
+  /** 函数调用策略 */
+  function_call?: 'auto' | 'none' | { name: string }
 }
 
 /** API 响应接口 */

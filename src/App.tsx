@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Message, ToastData, MessageStatus } from './types'
+import { Message, ToastData, MessageStatus, FunctionCall } from './types'
 import { MessageList, InputArea, Settings, Toast } from './components'
 import { handleMessageSend, createMessage } from './services/messageService'
 import { configService } from './services/configService' 
@@ -80,14 +80,19 @@ function App() {
     try {
       await handleMessageSend(
         updatedMessages.slice(0, -1), 
-        ({ content, status, error }: { content: string, status: Message['status'], error?: string }) => {
+        ({ content, status, error, function_call }: { 
+          content: string, 
+          status: Message['status'], 
+          error?: string,
+          function_call?: FunctionCall 
+        }) => {
           setMessages(current => 
             current.map(msg => 
               msg.id === aiMessage.id 
-                ? { ...msg, content, status, error } 
+                ? { ...msg, content, status, error, function_call } 
                 : msg
             )
-          )
+          );
           
           if (status === 'success' || status === 'error' || status === 'aborted') {
             setChatStatus('idle')
@@ -101,6 +106,7 @@ function App() {
     } catch (error) {
       console.error('Message processing failed:', error)
       setChatStatus('idle')
+      setMessageController(null) // Add this line to reset messageController
     }
   }
 

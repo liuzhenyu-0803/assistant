@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Message as MessageType, MessageListProps } from '../../types'
+import { MessageListProps } from '../../types'
 import { Message } from '../Message'
 import './styles.css'
 

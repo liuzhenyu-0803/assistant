@@ -51,7 +51,8 @@ export function InputArea({
   onClearConversation,
   status,
   maxLength = 4000,
-  disabled = false,
+  // 虽然未在此组件中直接使用，但保留以满足接口定义
+  // disabled = false,
   placeholder = '输入消息，Shift+Enter换行, Enter发送...'
 }: InputAreaProps) {
 
