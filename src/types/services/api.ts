@@ -47,9 +47,9 @@ export interface ChatCompletionParams {
   /** 最大token数 */
   maxTokens?: number
   /** 函数定义列表 */
-  functions?: FunctionDefinition[]
+  tools?: FunctionDefinition[]
   /** 函数调用策略 */
-  function_call?: 'auto' | 'none' | { name: string }
+  tool_choice?: 'auto' | 'none' | { name: string }
 }
 
 /** API 响应接口 */
