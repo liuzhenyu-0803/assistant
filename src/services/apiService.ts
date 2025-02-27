@@ -13,6 +13,7 @@ import {
   ChatResponseMessage
 } from '../types'
 import { configService } from './configService'
+import { auto } from 'openai/_shims/registry.mjs';
 
 /**
  * API提供商配置
@@ -114,9 +115,15 @@ export const getResponse = async ({
   onChunk,
   temperature = 0.7,
   maxTokens = 2000,
-  functions,
-  function_call
+  tools,
+  tool_choice = "auto",
 }: ChatCompletionParams): Promise<string | null | ChatResponseMessage> => {
+
+  // 分别打印messages、tools、tool_choice
+  console.log('messages:', messages)
+  console.log('tools:', tools)
+  console.log('tool_choice:', tool_choice)
+
   try {
     const client = getOpenAIClient()
     
@@ -130,12 +137,12 @@ export const getResponse = async ({
     }
     
     // 添加函数调用参数
-    if (functions && functions.length > 0) {
-      requestParams.functions = functions;
-      if (function_call) {
-        requestParams.function_call = function_call;
-      }
-    }
+    // if (tools && tools.length > 0) {
+    //   requestParams.tools = tools;
+    //   if (tool_choice) {
+    //     requestParams.tool_choice = 'auto';
+    //   }
+    // }
 
     if (stream) {
       const streamResponse = await client.chat.completions.create({
