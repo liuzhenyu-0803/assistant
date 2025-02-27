@@ -48,29 +48,33 @@ export const handleMessageSend = async (
       contextMessages.push(chatMsg)
     })
 
-    // 不再重复添加当前用户消息，因为messages中已经包含了
-    // 打印消息列表
-    console.log('发送的消息列表:', contextMessages)
-
     // 获取可用工具转换为函数定义
-    const toolDescriptions = await window.electronAPI.tools.getToolDescriptions()
-    const functions: FunctionDefinition[] = toolDescriptions.map(tool => ({
-      name: tool.name,
-      description: tool.description,
-      parameters: {
-        type: 'object',
-        properties: tool.parameters.reduce((acc, param) => {
-          acc[param.name] = {
-            type: param.type,
-            description: param.description
-          }
-          return acc
-        }, {} as Record<string, { type: string; description: string }>),
-        required: tool.parameters
-          .filter(param => param.required)
-          .map(param => param.name)
+    const toolDescriptions = JSON.stringify(await window.electronAPI.tools.getToolDescriptions());
+    
+    // 构造一个functionDefinition的message，然后放到contextMessages引导大模型使用，role是system类型
+    contextMessages.push({
+      role: 'system',
+      content: `分析用户需求，判断是否需要使用以下可用的工具。如果需要使用工具，输出是下面的工具调用格式，如果不需要使用工具，输出是空。
+
+      ##可用工具描述
+      ${toolDescriptions}
+      
+      ##工具调用格式
+      {
+        "tool": "tool_name",
+        "arguments": {
+          "argument1": "value1",
+          "argument2": "value2"
+          ...
+        }
       }
-    }))
+
+      ##注意事项
+      1. 仔细阅读工具描述和参数说明
+      2. 一次只调用一个工具
+      3. 你的输出必须是格式化输出（工具调用格式），或者空
+      `,
+    })
 
     const config = configService.getConfig()
     
@@ -78,107 +82,114 @@ export const handleMessageSend = async (
     const response = await getResponse({
       messages: contextMessages,
       model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
-      functions,
+      // tools,
       stream: false,
       signal
     })
 
-    // 如果响应包含函数调用
-    if (typeof response === 'object' && response && response.function_call) {
-      console.log('接收到函数调用请求:', response.function_call)
-      
-      // 通知前端显示函数调用信息
-      onMessage({
-        content: `正在调用函数: ${response.function_call.name}`,
-        status: 'receiving',
-        function_call: response.function_call
-      })
-      
+    console.log('是否调用工具:', response);
+
+    // 判断response是否包含工具调用
+    if (typeof response === 'string' && response) {
       try {
-        // 执行函数调用
-        const result = await window.electronAPI.tools.executeTool(
-          response.function_call.name,
-          JSON.parse(response.function_call.arguments)
-        )
+        // 尝试解析响应内容为JSON
+        const toolCallObj = JSON.parse(response);
         
-        console.log('函数执行结果:', result)
-        
-        // 创建包含函数执行结果的消息
-        const functionResultMessage = createMessage(
-          JSON.stringify(result),
-          'function',
-          { name: response.function_call.name }
-        )
-        
-        // 将函数调用和结果添加到消息列表
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: '',  
-          function_call: response.function_call
-        }
-        
-        const updatedMessages = [
-          ...contextMessages, 
-          assistantMessage,
-          functionResultMessage
-        ]
-        
-        // 使用函数执行结果继续对话，使用流式响应
-        await getResponse({
-          messages: updatedMessages,
-          model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
-          stream: true,
-          onChunk: (chunk, done) => {
-            responseContent += chunk
-            
-            onMessage({
-              content: responseContent,
-              status: done ? 'success' : 'receiving'
-            })
-          },
-          signal
-        })
-      } catch (error) {
-        console.error('函数执行失败:', error)
-        onMessage({
-          content: `函数执行失败: ${error instanceof Error ? error.message : '未知错误'}`,
-          status: 'error',
-          error: error instanceof Error ? error.message : '未知错误'
-        })
-      }
-    } else if (typeof response === 'string') {
-      // 处理普通文本响应
-      responseContent = response
-      onMessage({
-        content: responseContent,
-        status: 'success'
-      })
-    } else {
-      // 使用流式响应处理普通文本回复
-      await getResponse({
-        messages: contextMessages,
-        model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
-        stream: true,
-        onChunk: (chunk, done) => {
-          responseContent += chunk
-
-          if (done)
-          {
-            console.log('API 流式响应:', responseContent)
-
-            if (!responseContent) {
-              throw new Error('无响应内容')
-            }
-          }
-
+        // 检查是否包含工具调用格式
+        if (toolCallObj && toolCallObj.tool && toolCallObj.arguments) {
+          console.log('接收到工具调用请求:', toolCallObj);
+          
+          // 通知前端显示工具调用信息
           onMessage({
-            content: responseContent,
-            status: done ? 'success' : 'receiving'
-          })
-        },
-        signal
-      })
+            content: `正在调用工具: ${toolCallObj.tool}`,
+            status: 'receiving',
+            function_call: {
+              name: toolCallObj.tool,
+              arguments: JSON.stringify(toolCallObj.arguments)
+            }
+          });
+          
+          try {
+            // 执行工具调用
+            const result = await window.electronAPI.tools.executeTool(
+              toolCallObj.tool,
+              toolCallObj.arguments
+            );
+            
+            console.log('工具执行结果:', result);
+
+            // 
+            const assistantMessage: ChatMessage = {
+                role: 'assistant',
+                content: `需要使用工具：${toolCallObj.tool}`
+              };
+            
+            //
+            const functionResultMessage: ChatMessage = {
+              role: 'function',
+              content: `工具返回结果：${result.toString()}`
+            };
+            
+            const updatedMessages = [
+              ...contextMessages.slice(0, -1), // 移除system prompt
+              assistantMessage,
+              functionResultMessage
+            ];
+            
+            // 使用工具执行结果继续对话，使用流式响应
+            await getResponse({
+              messages: updatedMessages,
+              model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
+              stream: true,
+              onChunk: (chunk, done) => {
+                responseContent += chunk;
+                
+                onMessage({
+                  content: responseContent,
+                  status: done ? 'success' : 'receiving'
+                });
+              },
+              signal
+            });
+          } catch (error) {
+            console.error('工具执行失败:', error);
+            onMessage({
+              content: `工具执行失败: ${error instanceof Error ? error.message : '未知错误'}`,
+              status: 'error',
+              error: error instanceof Error ? error.message : '未知错误'
+            });
+          }
+          return;
+        }
+      } catch (jsonError) {
+        // 解析JSON失败，说明不是工具调用格式，按普通回复处理
+        console.log('非工具调用格式，按普通回复处理');
+      }
     }
+    
+    // 使用流式响应处理普通文本回复
+    await getResponse({
+      messages: contextMessages.slice(0, -1), // 移除system prompt
+      model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
+      stream: true,
+      onChunk: (chunk, done) => {
+        responseContent += chunk;
+
+        if (done) {
+          console.log('API 流式响应:', responseContent);
+
+          if (!responseContent) {
+            throw new Error('无响应内容');
+          }
+        }
+
+        onMessage({
+          content: responseContent,
+          status: done ? 'success' : 'receiving'
+        });
+      },
+      signal
+    });
   } catch (error) {
     onMessage({
       content: responseContent,
