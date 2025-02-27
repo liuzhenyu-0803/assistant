@@ -234,7 +234,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               styles={{
                 menuPortal: base => ({
                   ...base,
-                  zIndex: 9999
+                  zIndex: 1000000 // 提高 z-index 使其与 API Provider 选择框一致
                 })
               }}
             />
