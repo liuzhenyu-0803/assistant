@@ -175,8 +175,8 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   }, [loadConfig])
 
   const content = (
-    <div className="settings-overlay">
-      <div className="settings-modal">
+    <div className="settings-overlay" onClick={onClose}>
+      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
           <h2 className="settings-title">系统设置</h2>
           <button className="close-button" onClick={onClose}>

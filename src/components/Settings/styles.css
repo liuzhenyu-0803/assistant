@@ -102,7 +102,7 @@
 
 /* 内容区 */
 .settings-content {
-  padding: 24px 28px 32px;
+  padding: 24px 28px 32px; /* 恢复底部padding为原来的32px */
   overflow-y: auto;
   flex: 1;
   display: flex;
@@ -138,6 +138,10 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 16px; /* 添加一个适当的底部间距 */
 }
 
 .settings-section-title {

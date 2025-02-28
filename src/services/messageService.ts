@@ -3,7 +3,7 @@
  * 负责处理消息发送、状态管理和流式响应
  */
 
-import { Message, ChatMessage, FunctionDefinition, FunctionCall } from '../types'
+import { Message, ChatMessage, FunctionCall } from '../types'
 import { configService } from './configService'
 import { getResponse } from './apiService'
 import { APIError } from '../types'
@@ -54,7 +54,7 @@ export const handleMessageSend = async (
     // 构造一个functionDefinition的message，然后放到contextMessages引导大模型使用，role是system类型
     contextMessages.push({
       role: 'system',
-      content: `分析用户需求，判断是否需要使用以下可用的工具。如果需要使用工具，输出是下面的工具调用格式，如果不需要使用工具，输出是空。
+      content: `分析用户需求，判断是否需要使用以下可用的工具。如果需要使用工具，输出为JSON对象且严格遵循工具调用格式，如果不需要使用工具，仅输出空字符串""。
 
       ##可用工具描述
       ${toolDescriptions}
@@ -69,10 +69,27 @@ export const handleMessageSend = async (
         }
       }
 
+      ##输出规范
+      1. 如果需要使用工具：必须输出有效的JSON对象，包含"tool"和"arguments"字段
+      2. 如果不需要使用工具：必须输出空字符串""（不含引号）
+      3. 不要输出任何额外的解释文字，仅输出JSON对象或空字符串
+
+      ##举例说明
+      示例1 - 用户需求：用命令获取当前日期
+      输出：{"tool": "execute_command", "arguments": {"command": "echo %date%"}}
+
+      示例2 - 用户需求：今天天气怎么样？（假设没有天气工具）
+      输出：
+
+      示例3 - 用户需求：打开文件夹
+      输出：{"tool": "open_folder", "arguments": {"path": "/users/documents"}}
+
       ##注意事项
-      1. 仔细阅读工具描述和参数说明
-      2. 一次只调用一个工具
-      3. 你的输出必须是格式化输出（工具调用格式），或者空
+      1. 一次只调用一个工具
+      2. 确保arguments中的参数名称和值与工具描述中的要求完全匹配
+      3. 所有JSON字段名和字符串值必须使用双引号
+      4. 确保输出的JSON格式有效且无语法错误
+      5. 避免使用需要交互的命令（如date, time），应使用echo %date%或echo %time%代替
       `,
     })
 
@@ -126,8 +143,12 @@ export const handleMessageSend = async (
             
             //
             const functionResultMessage: ChatMessage = {
-              role: 'function',
-              content: `工具返回结果：${result.toString()}`
+              role: 'user',
+              content: `工具返回结果：
+              ${JSON.stringify(result)}
+              
+              请结合工具返回结果继续对话。
+              `
             };
             
             const updatedMessages = [
