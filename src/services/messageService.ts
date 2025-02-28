@@ -23,7 +23,7 @@ export const handleMessageSend = async (
   let responseContent = ''
 
   try {
-    const contextMessages: ChatMessage[] = []
+    const sendMessages: ChatMessage[] = []
 
     // 使用最近的20条消息作为上下文（已包含当前用户消息）
     const recentMessages = messages.slice(-20)
@@ -34,27 +34,20 @@ export const handleMessageSend = async (
         role: msg.role,
         content: msg.content
       }
-      
-      // 如果有函数调用信息，添加到消息中
-      if (msg.function_call) {
-        chatMsg.function_call = msg.function_call
-      }
-      
-      // 如果是函数消息，添加name属性
-      if (msg.role === 'function' && msg.name) {
-        chatMsg.name = msg.name
-      }
-      
-      contextMessages.push(chatMsg)
+      sendMessages.push(chatMsg)
     })
 
     // 获取可用工具转换为函数定义
     const toolDescriptions = JSON.stringify(await window.electronAPI.tools.getToolDescriptions());
     
-    // 构造一个functionDefinition的message，然后放到contextMessages引导大模型使用，role是system类型
-    contextMessages.push({
+    // 添加系统提示消息, 包含工具使用说明
+    sendMessages.push({
       role: 'system',
-      content: `分析用户需求，判断是否需要使用以下可用的工具。如果需要使用工具，输出为JSON对象且严格遵循工具调用格式，如果不需要使用工具，仅输出空字符串""。
+      content: `分析用户需求，判断是否需要使用以下可用的工具获取信息或执行任务。
+
+      ##工具所在的环境
+      - 操作系统：Windows 10
+      - 调用方式：通过Node.js的exec方法调用
 
       ##可用工具描述
       ${toolDescriptions}
@@ -97,14 +90,14 @@ export const handleMessageSend = async (
     
     // 非流式方式先检查是否需要调用函数
     const response = await getResponse({
-      messages: contextMessages,
+      messages: sendMessages,
       model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
       // tools,
       stream: false,
       signal
     })
 
-    console.log('是否调用工具:', response);
+    console.log('是否调用工具响应:', response);
 
     // 判断response是否包含工具调用
     if (typeof response === 'string' && response) {
@@ -114,7 +107,6 @@ export const handleMessageSend = async (
         
         // 检查是否包含工具调用格式
         if (toolCallObj && toolCallObj.tool && toolCallObj.arguments) {
-          console.log('接收到工具调用请求:', toolCallObj);
           
           // 通知前端显示工具调用信息
           onMessage({
@@ -152,7 +144,7 @@ export const handleMessageSend = async (
             };
             
             const updatedMessages = [
-              ...contextMessages.slice(0, -1), // 移除system prompt
+              ...sendMessages.slice(0, -1), // 移除system prompt
               assistantMessage,
               functionResultMessage
             ];
@@ -190,7 +182,7 @@ export const handleMessageSend = async (
     
     // 使用流式响应处理普通文本回复
     await getResponse({
-      messages: contextMessages.slice(0, -1), // 移除system prompt
+      messages: sendMessages.slice(0, -1), // 移除system prompt
       model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
       stream: true,
       onChunk: (chunk, done) => {
