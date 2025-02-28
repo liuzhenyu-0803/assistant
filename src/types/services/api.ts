@@ -82,39 +82,3 @@ export interface APIResponse {
 
 /** API 错误类型 */
 export type APIErrorType = 'abort' | 'rate_limit' | 'network' | 'auth' | 'server' | 'unknown';
-
-/** API 错误类 */
-export class APIError extends Error {
-  readonly type: APIErrorType;
-  
-  constructor(options: {
-    message: string,
-    type?: APIErrorType
-  }) {
-    super(options.message)
-    this.name = 'APIError'
-    this.type = options.type || 'unknown'
-  }
-  
-  /** 获取错误类型 */
-  getType(): APIErrorType {
-    return this.type;
-  }
-
-  /** 判断是否为取消请求 */
-  isAbort(): boolean {
-    return this.type === 'abort'
-  }
-
-  /** 判断是否为限速错误 */
-  isRateLimit(): boolean {
-    return this.type === 'rate_limit' || this.message.toLowerCase().includes('rate limit')
-  }
-
-  /** 判断是否为网络错误 */
-  isNetworkError(): boolean {
-    return this.type === 'network' || 
-           this.message.toLowerCase().includes('network') || 
-           this.message.toLowerCase().includes('connection')
-  }
-}
