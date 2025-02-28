@@ -10,6 +10,7 @@ import {
   APIConfig,
   ChatCompletionParams,
   APIError,
+  APIErrorType,
   ChatResponseMessage
 } from '../types'
 import { configService } from './configService'
@@ -219,14 +220,29 @@ export const getResponse = async ({
     }
     
     if (error instanceof Error) {
+      // 分析错误类型
+      const errorMsg = error.message.toLowerCase();
+      let errorType: APIErrorType = 'unknown';
+      
+      if (errorMsg.includes('network') || errorMsg.includes('connection') || errorMsg.includes('timeout')) {
+        errorType = 'network';
+      } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many requests')) {
+        errorType = 'rate_limit';
+      } else if (errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('api key')) {
+        errorType = 'auth';
+      } else if (errorMsg.includes('server') || errorMsg.includes('service unavailable')) {
+        errorType = 'server';
+      }
+      
       throw new APIError({
         message: error.message,
-        type: 'unknown'
-      })
+        type: errorType
+      });
     }
+    
     throw new APIError({
       message: 'Unknown error',
       type: 'unknown'
-    })
+    });
   }
 }
