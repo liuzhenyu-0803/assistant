@@ -45,10 +45,11 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
   }
 
   // 显示函数调用信息
+  // 注意：工具调用现在以普通文本格式显示，不再使用function_call对象
+  // 以下代码保留以兼容历史消息
   if (message.function_call) {
-    // 生成函数调用的漂亮展示
-    const functionArgs = JSON.parse(message.function_call.arguments || '{}')
-    const functionContent = `**调用函数:** \`${message.function_call.name}\`\n\n**参数:**\n\`\`\`json\n${JSON.stringify(functionArgs, null, 2)}\n\`\`\``
+    // 生成函数调用的简洁展示
+    const functionContent = `正在调用工具: ${message.function_call.name}`;
     
     return (
       <div className={`message-item ${message.role} function-call`}>

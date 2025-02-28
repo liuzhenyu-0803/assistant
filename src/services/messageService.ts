@@ -207,7 +207,6 @@ const handleError = (
 /**
  * 解析工具调用响应
  * 尝试将API响应解析为工具调用对象
- * 增强版本：支持多种格式并提供详细日志
  * 
  * @param {string} response - API返回的文本响应
  * @returns {{ tool: string, arguments: any } | null} 解析成功返回工具调用对象，失败返回null
@@ -233,9 +232,7 @@ const parseToolCallResponse = (response: string): { tool: string, arguments: any
     const parsedObj = JSON.parse(jsonContent);
     console.log('解析的对象:', parsedObj);
     
-    // 3. 检查各种可能的格式
-    
-    // 3.1 直接符合预期格式: { tool: string, arguments: object }
+    // 标准格式: { tool: string, arguments: object }
     if (parsedObj.tool && parsedObj.arguments) {
       console.log('格式匹配: { tool, arguments }');
       return {
@@ -244,48 +241,6 @@ const parseToolCallResponse = (response: string): { tool: string, arguments: any
           ? JSON.parse(parsedObj.arguments) 
           : parsedObj.arguments
       };
-    }
-    
-    // 3.2 OpenAI格式: { function_call: { name: string, arguments: string } }
-    if (parsedObj.function_call && parsedObj.function_call.name) {
-      console.log('格式匹配: OpenAI function_call');
-      return {
-        tool: parsedObj.function_call.name,
-        arguments: typeof parsedObj.function_call.arguments === 'string'
-          ? JSON.parse(parsedObj.function_call.arguments)
-          : parsedObj.function_call.arguments
-      };
-    }
-    
-    // 3.3 其他变体格式: { name/toolName, args/parameters/params }
-    if ((parsedObj.name || parsedObj.toolName) && 
-        (parsedObj.args || parsedObj.parameters || parsedObj.params)) {
-      console.log('格式匹配: 变体格式');
-      const toolName = parsedObj.name || parsedObj.toolName;
-      const args = parsedObj.args || parsedObj.parameters || parsedObj.params;
-      return {
-        tool: toolName,
-        arguments: typeof args === 'string' ? JSON.parse(args) : args
-      };
-    }
-    
-    // 3.4 检查嵌套结构，有些模型可能将工具调用嵌套在其他字段中
-    for (const key in parsedObj) {
-      if (typeof parsedObj[key] === 'object' && parsedObj[key] !== null) {
-        const nestedObj = parsedObj[key];
-        
-        // 递归检查嵌套结构
-        if ((nestedObj.tool || nestedObj.name || nestedObj.function) && 
-            (nestedObj.arguments || nestedObj.args || nestedObj.params)) {
-          console.log(`格式匹配: 嵌套在 ${key} 字段中`);
-          const toolName = nestedObj.tool || nestedObj.name || nestedObj.function;
-          const args = nestedObj.arguments || nestedObj.args || nestedObj.params;
-          return {
-            tool: toolName,
-            arguments: typeof args === 'string' ? JSON.parse(args) : args
-          };
-        }
-      }
     }
     
     console.log('无法识别的工具调用格式:', parsedObj);
@@ -324,10 +279,6 @@ const handleToolCall = async (
   updateClientMessage(onMessage, {
     content,
     status: 'receiving',
-    function_call: {
-      name: toolCallData.tool,
-      arguments: JSON.stringify(toolCallData.arguments)
-    }
   });
 
   // 执行工具调用并获取结果内容
@@ -540,13 +491,10 @@ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
     输出：{"tool":"open_folder","arguments":{"path":"/users/documents"}}
 
     ##重要 - 常见错误格式和修正
-    错误1：输出 {"function_call":{"name":"tool_name","arguments":"..."}}
-    修正：改为 {"tool":"tool_name","arguments":{...}}
-
-    错误2：输出 \`\`\`json {"tool":"tool_name","arguments":{...}} \`\`\`
+    错误1：输出 \`\`\`json {"tool":"tool_name","arguments":{...}} \`\`\`
     修正：去掉markdown标记，只输出 {"tool":"tool_name","arguments":{...}}
 
-    错误3：输出 {"tool":"tool_name","arguments":"参数字符串"}
+    错误2：输出 {"tool":"tool_name","arguments":"参数字符串"}
     修正：arguments必须是对象 {"tool":"tool_name","arguments":{"param":"值"}}
 
     ##注意事项
