@@ -23,10 +23,24 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     if (message.status === 'waiting') {
       displayContent = '正在思考...'
     } else if (message.status === 'error') {
-      // 显示错误消息并添加样式
-      displayContent = `**发生错误** 😢\n\n\`\`\`\n${message.error || '未知错误'}\n\`\`\``
+      // 保留已有内容，并附加错误提示
+      const errorMessage = message.error || '未知错误'
+      if (message.content) {
+        // 有内容时，在内容后添加错误提示
+        displayContent = `${message.content}\n\n**发生错误** 😢\n\n\`\`\`\n${errorMessage}\n\`\`\``
+      } else {
+        // 无内容时，只显示错误信息
+        displayContent = `**发生错误** 😢\n\n\`\`\`\n${errorMessage}\n\`\`\``
+      }
     } else if (message.status === 'aborted') {
-      displayContent = '**已中断请求** ⚠️'
+      // 保留已有内容，并附加中断提示
+      if (message.content) {
+        // 有内容时，在内容后添加中断提示
+        displayContent = `${message.content}\n\n**已中断请求** ⚠️`
+      } else {
+        // 无内容时，只显示中断提示
+        displayContent = '**已中断请求** ⚠️'
+      }
     }
   }
 
