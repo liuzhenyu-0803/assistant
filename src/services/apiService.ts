@@ -7,7 +7,6 @@ import OpenAI from 'openai'
 import { 
   APIProvider, 
   ProviderConfig,
-  APIConfig,
   ChatCompletionParams,
   ChatResponseMessage
 } from '../types'
@@ -102,19 +101,31 @@ export const getResponse = async ({
     dangerouslyAllowBrowser: true
   })
   
-  const requestParams = {
+  // 创建一个新的对象用于API请求，确保类型兼容性
+  const baseParams = {
     model,
-    messages,
+    // 过滤和转换消息，确保与OpenAI API兼容
+    messages: messages.filter(msg => msg.role !== 'function').map(msg => ({
+      role: msg.role as 'user' | 'assistant' | 'system',
+      content: msg.content,
+      ...(msg.name ? { name: msg.name } : {}),
+      ...(msg.function_call ? { function_call: msg.function_call } : {})
+    })),
     temperature,
-    max_tokens: maxTokens,
-    signal
+    max_tokens: maxTokens
   }
   
   if (stream) {
-    const streamResponse = await client.chat.completions.create({
-      ...requestParams,
-      stream: true
-    })
+    // 为流式请求创建专用参数
+    const streamParams = {
+      ...baseParams,
+      stream: true as const
+    }
+    
+    const streamResponse = await client.chat.completions.create(
+      streamParams,
+      { signal }
+    )
     
     // 使用类型断言将响应转换为可迭代对象
     const stream = streamResponse as unknown as AsyncIterable<any>
@@ -146,10 +157,16 @@ export const getResponse = async ({
     
     return null
   } else {
-    const response = await client.chat.completions.create({
-      ...requestParams,
-      stream: false
-    })
+    // 为非流式请求创建专用参数
+    const standardParams = {
+      ...baseParams,
+      stream: false as const
+    }
+    
+    const response = await client.chat.completions.create(
+      standardParams,
+      { signal }
+    )
 
     const message = response.choices?.[0]?.message
     return message?.content || ''

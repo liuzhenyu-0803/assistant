@@ -269,7 +269,7 @@ const handleToolCall = async (
   signal?: AbortSignal
 ): Promise<void> => {
   // 获取当前内容（工具调用信息）
-  const content = `正在调用工具: ${toolCallData.tool} ...`;
+  const content = `正在调用工具: ${toolCallData.tool}`;
   
   // 如果请求已被取消，直接返回
   if (checkAborted(signal, onMessage, content)) return;
@@ -452,7 +452,7 @@ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
 
   return {
     role: 'system',
-    content: `分析用户需求，判断是否需要使用以下可用的工具获取信息或执行任务。
+    content: `分析用户最新的消息，判断是否需要使用以下可用的工具获取信息或执行任务。
 
     ##工具所在的环境
     - 操作系统：Windows 10
