@@ -107,14 +107,64 @@ export const handleMessageSend = async (
     
     // 尝试解析为工具调用
     if (typeof response === 'string' && response) {
-      const toolCallData = parseToolCallResponse(response);
+      // 添加重试逻辑，最多重试3次
+      let maxRetries = 3;
+      let currentRetry = 0;
+      let toolCallData = parseToolCallResponse(response);
+      
+      // 当解析失败且未超过最大重试次数时进行重试
+      while (!toolCallData && currentRetry < maxRetries) {
+        console.log(`工具调用解析失败，第${currentRetry + 1}次重试...`);
+        
+        // 更新UI状态
+        updateClientMessage(onMessage, {
+          content: `工具调用格式错误，正在请求修正... (${currentRetry + 1}/${maxRetries})`,
+          status: 'receiving'
+        });
+        
+        // 创建新的消息数组，包含原始回复和格式纠正指示
+        // 注意：这里保留系统提示消息，因为在工具调用格式重试时需要系统消息中的格式指导
+        const retryMessages = [
+          ...sendMessages, // 保留所有消息，包括系统提示
+          { role: 'assistant' as const, content: response },
+          { role: 'user' as const, content: `你的响应格式不正确。我需要一个包含"tool"和"arguments"字段的JSON对象。例如: {"tool": "工具名称", "arguments": { 参数对象 }}。请重新以正确的JSON格式返回工具调用。` }
+        ];
+        
+        // 重新请求大模型
+        const retryResponse = await getResponse({
+          messages: retryMessages,
+          stream: false,
+          signal
+        });
+        
+        // 如果请求被取消，退出循环
+        if (checkAborted(signal, onMessage, typeof retryResponse === 'string' ? retryResponse : '')) {
+          return;
+        }
+        
+        // 再次尝试解析
+        if (typeof retryResponse === 'string' && retryResponse) {
+          console.log(`重试响应: ${retryResponse}`);
+          toolCallData = parseToolCallResponse(retryResponse);
+        }
+        
+        currentRetry++;
+      }
+      
       if (toolCallData) {
         await handleToolCall(toolCallData, sendMessages, onMessage, signal);
         return;
+      } else if (currentRetry > 0) {
+        // 如果经过重试仍然失败，通知用户
+        updateClientMessage(onMessage, {
+          content: `经过${currentRetry}次尝试后，无法解析工具调用，将作为普通回复处理。`,
+          status: 'receiving'
+        });
       }
     }
     
     // 如果不是工具调用，执行普通流式响应
+    // 注意：流式响应时移除系统提示消息，因为这时已不需要工具调用相关指导
     await handleStreamResponse(sendMessages.slice(0, -1), onMessage, signal);
   } catch (error) {
     handleError(error, '', onMessage, signal);
@@ -157,19 +207,92 @@ const handleError = (
 /**
  * 解析工具调用响应
  * 尝试将API响应解析为工具调用对象
+ * 增强版本：支持多种格式并提供详细日志
  * 
  * @param {string} response - API返回的文本响应
  * @returns {{ tool: string, arguments: any } | null} 解析成功返回工具调用对象，失败返回null
  */
 const parseToolCallResponse = (response: string): { tool: string, arguments: any } | null => {
   try {
-    const toolCallObj = JSON.parse(response);
-    if (toolCallObj?.tool && toolCallObj?.arguments) {
-      return { tool: toolCallObj.tool, arguments: toolCallObj.arguments };
+    console.log('尝试解析工具调用响应:', response);
+    
+    // 1. 尝试识别并处理JSON内容，可能被包裹在非JSON文本中
+    let jsonContent = response.trim();
+    
+    // 查找JSON部分的开始和结束位置
+    const startIdx = jsonContent.indexOf('{');
+    const endIdx = jsonContent.lastIndexOf('}');
+    
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      // 提取JSON部分
+      jsonContent = jsonContent.substring(startIdx, endIdx + 1);
+      console.log('提取的JSON部分:', jsonContent);
     }
+    
+    // 2. 尝试解析JSON
+    const parsedObj = JSON.parse(jsonContent);
+    console.log('解析的对象:', parsedObj);
+    
+    // 3. 检查各种可能的格式
+    
+    // 3.1 直接符合预期格式: { tool: string, arguments: object }
+    if (parsedObj.tool && parsedObj.arguments) {
+      console.log('格式匹配: { tool, arguments }');
+      return {
+        tool: parsedObj.tool,
+        arguments: typeof parsedObj.arguments === 'string' 
+          ? JSON.parse(parsedObj.arguments) 
+          : parsedObj.arguments
+      };
+    }
+    
+    // 3.2 OpenAI格式: { function_call: { name: string, arguments: string } }
+    if (parsedObj.function_call && parsedObj.function_call.name) {
+      console.log('格式匹配: OpenAI function_call');
+      return {
+        tool: parsedObj.function_call.name,
+        arguments: typeof parsedObj.function_call.arguments === 'string'
+          ? JSON.parse(parsedObj.function_call.arguments)
+          : parsedObj.function_call.arguments
+      };
+    }
+    
+    // 3.3 其他变体格式: { name/toolName, args/parameters/params }
+    if ((parsedObj.name || parsedObj.toolName) && 
+        (parsedObj.args || parsedObj.parameters || parsedObj.params)) {
+      console.log('格式匹配: 变体格式');
+      const toolName = parsedObj.name || parsedObj.toolName;
+      const args = parsedObj.args || parsedObj.parameters || parsedObj.params;
+      return {
+        tool: toolName,
+        arguments: typeof args === 'string' ? JSON.parse(args) : args
+      };
+    }
+    
+    // 3.4 检查嵌套结构，有些模型可能将工具调用嵌套在其他字段中
+    for (const key in parsedObj) {
+      if (typeof parsedObj[key] === 'object' && parsedObj[key] !== null) {
+        const nestedObj = parsedObj[key];
+        
+        // 递归检查嵌套结构
+        if ((nestedObj.tool || nestedObj.name || nestedObj.function) && 
+            (nestedObj.arguments || nestedObj.args || nestedObj.params)) {
+          console.log(`格式匹配: 嵌套在 ${key} 字段中`);
+          const toolName = nestedObj.tool || nestedObj.name || nestedObj.function;
+          const args = nestedObj.arguments || nestedObj.args || nestedObj.params;
+          return {
+            tool: toolName,
+            arguments: typeof args === 'string' ? JSON.parse(args) : args
+          };
+        }
+      }
+    }
+    
+    console.log('无法识别的工具调用格式:', parsedObj);
     return null;
-  } catch {
-    console.log('非工具调用格式，按普通回复处理');
+  } catch (error) {
+    console.error('解析工具调用失败:', error);
+    console.log('原始响应:', response);
     return null;
   }
 };
@@ -214,10 +337,11 @@ const handleToolCall = async (
   if (checkAborted(signal, onMessage, resultContent)) return;
   
   // 准备带有工具结果的消息
-  const updatedMessages = [
-    ...sendMessages.slice(0, -1), // 移除system prompt
-    { role: 'assistant', content: `需要使用工具：${toolCallData.tool}` },
-    { role: 'user', content: resultContent }
+  // 注意：这里移除系统提示消息，因为在执行工具后的对话中不再需要工具格式相关指导
+  const updatedMessages: ChatMessage[] = [
+    ...sendMessages.slice(0, -1), // 移除系统提示
+    { role: 'assistant' as const, content: `需要使用工具：${toolCallData.tool}` },
+    { role: 'user' as const, content: resultContent }
   ];
   
   // 流式获取模型回复
@@ -387,7 +511,7 @@ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
     ##可用工具描述
     ${toolDescriptions}
     
-    ##工具调用格式
+    ##工具调用格式 (必须严格遵循)
     {
       "tool": "tool_name",
       "arguments": {
@@ -398,19 +522,32 @@ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
     }
 
     ##输出规范
-    1. 如果需要使用工具：必须输出有效的JSON对象，包含"tool"和"arguments"字段
+    1. 如果需要使用工具：必须且只能输出有效的JSON对象，包含"tool"和"arguments"字段
     2. 如果不需要使用工具：必须输出空字符串""（不含引号）
     3. 不要输出任何额外的解释文字，仅输出JSON对象或空字符串
+    4. 不要使用Markdown格式，不要在JSON前后加任何标记如 \`\`\`json
+    5. 不要输出其他格式如function_call、name等字段，严格按照指定的tool和arguments格式
+    6. arguments必须是一个对象，不能是字符串
 
     ##举例说明
     示例1 - 用户需求：用命令获取当前日期
-    输出：{"tool": "execute_command", "arguments": {"command": "echo %date%"}}
+    输出：{"tool":"execute_command","arguments":{"command":"echo %date%"}}
 
     示例2 - 用户需求：今天天气怎么样？（假设没有天气工具）
     输出：
 
     示例3 - 用户需求：打开文件夹
-    输出：{"tool": "open_folder", "arguments": {"path": "/users/documents"}}
+    输出：{"tool":"open_folder","arguments":{"path":"/users/documents"}}
+
+    ##重要 - 常见错误格式和修正
+    错误1：输出 {"function_call":{"name":"tool_name","arguments":"..."}}
+    修正：改为 {"tool":"tool_name","arguments":{...}}
+
+    错误2：输出 \`\`\`json {"tool":"tool_name","arguments":{...}} \`\`\`
+    修正：去掉markdown标记，只输出 {"tool":"tool_name","arguments":{...}}
+
+    错误3：输出 {"tool":"tool_name","arguments":"参数字符串"}
+    修正：arguments必须是对象 {"tool":"tool_name","arguments":{"param":"值"}}
 
     ##注意事项
     1. 一次只调用一个工具
@@ -418,6 +555,8 @@ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
     3. 所有JSON字段名和字符串值必须使用双引号
     4. 确保输出的JSON格式有效且无语法错误
     5. 避免使用需要交互的命令（如date, time），应使用echo %date%或echo %time%代替
+    6. 如果用户请求被拒绝执行，不要返回工具调用格式，而是作为普通响应
+    7. 输出必须是原始JSON，不能被包装在任何文本说明或代码块中
     `,
   };
 };
