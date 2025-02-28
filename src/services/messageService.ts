@@ -106,7 +106,7 @@ export const handleMessageSend = async (
     console.log('调用工具响应:', response);
     
     // 尝试解析为工具调用
-    if (typeof response === 'string' && response) {
+    if (typeof response === 'string' && response && isLikelyToolCall(response)) {
       // 添加重试逻辑，最多重试3次
       let maxRetries = 3;
       let currentRetry = 0;
@@ -249,6 +249,101 @@ const parseToolCallResponse = (response: string): { tool: string, arguments: any
     console.log('原始响应:', response);
     return null;
   }
+};
+
+/**
+ * 判断响应是否可能是工具调用
+ * 通过检查是否包含JSON结构和工具调用关键词来初步判断
+ * 
+ * @param {string} response - API返回的文本响应
+ * @returns {boolean} 如果可能是工具调用返回true，否则返回false
+ */
+const isLikelyToolCall = (response: string): boolean => {
+  // 检查基础条件
+  if (!response || response.length < 5) return false;
+  
+  // 1. 检查是否包含JSON结构
+  const containsJsonStructure = response.includes('{') && response.includes('}');
+  if (!containsJsonStructure) return false;
+  
+  // 2. 检查是否包含工具调用相关关键词
+  const containsToolKeywords = /\b(tool|tools|argument|使用工具|调用|工具名称)\b/i.test(response);
+  
+  // 3. 尝试找到JSON对象并检查是否包含工具调用相关属性
+  const jsonStartIndex = response.indexOf('{');
+  if (jsonStartIndex !== -1) {
+    try {
+      // 尝试解析可能的JSON部分
+      const potentialJson = response.substring(jsonStartIndex);
+      const endIndex = findMatchingCloseBrace(potentialJson);
+      
+      if (endIndex > 0) {
+        const jsonCandidate = potentialJson.substring(0, endIndex + 1);
+        // 快速检查是否包含工具调用相关属性名
+        return jsonCandidate.includes('"tool"') || 
+               jsonCandidate.includes('"arguments"') || 
+               jsonCandidate.includes('"工具"');
+      }
+    } catch {
+      // 解析失败，依赖外层判断
+    }
+  }
+  
+  // 结合多种判断条件
+  return containsJsonStructure && containsToolKeywords;
+};
+
+/**
+ * 查找匹配的右大括号
+ * 用于从文本中提取可能的JSON对象
+ * 
+ * @param {string} text - 以左大括号开始的文本
+ * @returns {number} 匹配的右大括号位置，如果找不到返回-1
+ */
+const findMatchingCloseBrace = (text: string): number => {
+  let braceCount = 0;
+  let inString = false;
+  let escapeNext = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    // 处理字符串内的字符
+    if (inString) {
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = false;
+      }
+      
+      continue;
+    }
+    
+    // 处理字符串外的字符
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    
+    if (char === '{') {
+      braceCount++;
+    } else if (char === '}') {
+      braceCount--;
+      if (braceCount === 0) {
+        return i; // 找到匹配的右大括号
+      }
+    }
+  }
+  
+  return -1; // 没有找到匹配的右大括号
 };
 
 /**
