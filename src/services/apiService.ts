@@ -109,7 +109,7 @@ const getOpenAIClient = () => {
  */
 export const getResponse = async ({
   messages,
-  model,
+  model = configService.getConfig().apiConfig?.selectedModels[configService.getConfig().apiConfig?.provider],
   stream = false,
   signal,
   onChunk,
