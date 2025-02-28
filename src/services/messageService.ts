@@ -103,7 +103,7 @@ export const handleMessageSend = async (
     // 检查请求是否已被取消
     if (checkAborted(signal, onMessage, typeof response === 'string' ? response : '')) return;
     
-    console.log('是否调用工具响应:', response);
+    console.log('调用工具响应:', response);
     
     // 尝试解析为工具调用
     if (typeof response === 'string' && response) {
@@ -234,7 +234,6 @@ const parseToolCallResponse = (response: string): { tool: string, arguments: any
     
     // 标准格式: { tool: string, arguments: object }
     if (parsedObj.tool && parsedObj.arguments) {
-      console.log('格式匹配: { tool, arguments }');
       return {
         tool: parsedObj.tool,
         arguments: typeof parsedObj.arguments === 'string' 
@@ -270,7 +269,7 @@ const handleToolCall = async (
   signal?: AbortSignal
 ): Promise<void> => {
   // 获取当前内容（工具调用信息）
-  const content = `正在调用工具: ${toolCallData.tool}`;
+  const content = `正在调用工具: ${toolCallData.tool} ...`;
   
   // 如果请求已被取消，直接返回
   if (checkAborted(signal, onMessage, content)) return;
