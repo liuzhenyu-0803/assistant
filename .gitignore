@@ -25,3 +25,6 @@ dist-ssr
 *.sw?
 
 out/
+
+# NPM Lock file
+package-lock.json
