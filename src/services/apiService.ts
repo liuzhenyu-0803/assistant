@@ -123,7 +123,12 @@ export const getResponse = async ({
       // 检查是否已取消请求
       if (signal?.aborted) {
         console.log('请求已被中断')
-        break
+        // 在中断循环之前，确保触发错误处理
+        // 这样上层的handleError函数会被调用
+        throw new DOMException('请求被用户取消', 'AbortError')
+        // 不需要break，因为throw会中断循环
+        // 这确保了中止状态能传递到上层
+        // break
       }
       
       const content = chunk.choices?.[0]?.delta?.content || ''
