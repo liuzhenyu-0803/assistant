@@ -4,7 +4,6 @@
  */
 
 import { Message, ChatMessage, FunctionCall } from '../types'
-import { configService } from './configService'
 import { getResponse } from './apiService'
 import { APIError } from '../types'
 
@@ -29,7 +28,7 @@ export const handleMessageSend = async (
   sendMessages.push(...chatMessages)
 
   // 使用createSystemMessageForToolUsage函数创建系统消息（工具使用）
-  sendMessages.push(createSystemMessageForToolUsage());
+  sendMessages.push(await createSystemMessageForToolUsage());
 
   try {
     // 非流式方式先检查是否需要调用函数
@@ -94,7 +93,6 @@ export const handleMessageSend = async (
             // 使用工具执行结果继续对话，使用流式响应
             await getResponse({
               messages: updatedMessages,
-              model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
               stream: true,
               onChunk: (chunk, done) => {
                 responseContent += chunk;
@@ -125,7 +123,6 @@ export const handleMessageSend = async (
     // 使用流式响应处理普通文本回复
     await getResponse({
       messages: sendMessages.slice(0, -1), // 移除system prompt
-      model: config.apiConfig!.selectedModels[config.apiConfig!.provider],
       stream: true,
       onChunk: (chunk, done) => {
         responseContent += chunk;
@@ -206,7 +203,7 @@ const getRecentMessages = (messages: Message[], limit: number = 20): ChatMessage
  * @param toolDescriptions 工具描述JSON字符串
  * @returns 系统提示消息对象
  */
-const createSystemMessageForToolUsage = (toolDescriptions: string): ChatMessage => {
+ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
   const toolDescriptions = JSON.stringify(await window.electronAPI.tools.getToolDescriptions());
 
   return {

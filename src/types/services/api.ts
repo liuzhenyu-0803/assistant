@@ -33,7 +33,7 @@ export interface ProviderConfig {
 /** 聊天补全参数接口 */
 export interface ChatCompletionParams {
   /** 模型名称 */
-  model: string
+  model?: string
   /** 消息历史列表 */
   messages: ChatMessage[]
   /** 是否使用流式传输 */
