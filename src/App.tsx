@@ -112,23 +112,28 @@ function App() {
 
   const abortMessage = () => {
     if (messageController) {
-      messageController.abort()
-      setMessageController(null)
-      setChatStatus('idle')
+      // 按照主流的Fetch API取消模式:
+      // 1. 发送取消信号
+      messageController.abort();
       
-      // 更新最后一条消息的状态为aborted
+      // 2. 添加视觉反馈，但保持状态
       setMessages(current => {
         const lastMessage = current[current.length - 1];
         if (lastMessage && lastMessage.role === 'assistant' && 
             (lastMessage.status === 'waiting' || lastMessage.status === 'receiving')) {
-          return current.map((msg, index) => 
-            index === current.length - 1 
-              ? { ...msg, status: 'aborted', content: '' } 
-              : msg
+          return current.map(m => 
+            m.id === lastMessage.id 
+              ? { ...m, content: m.content + '\n\n[正在终止请求...]' } 
+              : m
           );
         }
         return current;
       });
+      
+      // 3. 不立即清除控制器引用，也不立即更新状态
+      // 让回调机制在底层请求真正终止后更新UI状态
+      // 在messageService的回调中会设置status: 'aborted'
+      // 并最终触发setChatStatus('idle')和setMessageController(null)
     }
   }
 
