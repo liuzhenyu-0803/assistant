@@ -1,18 +1,42 @@
 /**
- * Settings/styles.css
- * 设置弹窗样式 - 现代暗色主题
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-15
+ * Settings/styles.css - 设置弹窗样式
  */
 
-/* 动画关键帧 */
-@keyframes fadeIn {
+/* CSS变量 */
+:root {
+  --settings-bg-primary: #1e1e2d;
+  --settings-bg-secondary: #181825;
+  --settings-bg-input: #0d0d14;
+  --settings-bg-input-hover: #13131c;
+  
+  --settings-text-primary: #e1e1e9;
+  --settings-text-secondary: #8e8ea0;
+  --settings-text-tertiary: #6b6b80;
+  
+  --settings-border-default: #2f2f3d;
+  --settings-border-hover: #3f3f4d;
+  --settings-border-focus: #4a3b89;
+  
+  --settings-highlight: #4a3b89;
+  --settings-highlight-hover: #5a4b99;
+  
+  --settings-error: #ff4d4f;
+  
+  --settings-radius-sm: 4px;
+  --settings-radius-md: 6px;
+  --settings-radius-lg: 12px;
+  
+  --settings-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  --settings-z-index: 999999;
+}
+
+/* 动画 */
+@keyframes settings-fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes slideIn {
+@keyframes settings-slideIn {
   from {
     opacity: 0;
     transform: translate(-50%, -48%);
@@ -23,7 +47,7 @@
   }
 }
 
-/* 遮罩层 */
+/* 弹窗结构 */
 .settings-overlay {
   position: fixed;
   top: 0;
@@ -34,12 +58,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999999;
-  animation: fadeIn 0.2s ease-out;
+  z-index: var(--settings-z-index);
+  animation: settings-fadeIn 0.2s ease-out;
   pointer-events: auto;
 }
 
-/* 模态框 */
 .settings-modal {
   position: fixed;
   top: 50%;
@@ -48,14 +71,14 @@
   width: 480px;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: #1e1e2d;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+  background-color: var(--settings-bg-primary);
+  border-radius: var(--settings-radius-lg);
+  box-shadow: var(--settings-shadow);
   display: flex;
   flex-direction: column;
-  z-index: 1000;
-  animation: slideIn 0.3s ease-out;
-  overflow: hidden; /* 确保内容不会超出圆角 */
+  z-index: calc(var(--settings-z-index) + 1);
+  animation: settings-slideIn 0.3s ease-out;
+  overflow: hidden;
 }
 
 /* 标题栏 */
@@ -64,58 +87,56 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  color: #e1e1e9;
-  background-color: #181825;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  color: var(--settings-text-primary);
+  background-color: var(--settings-bg-secondary);
+  border-top-left-radius: var(--settings-radius-lg);
+  border-top-right-radius: var(--settings-radius-lg);
 }
 
 .settings-title {
   font-size: 16px;
   font-weight: 500;
   margin: 0;
-  color: #e1e1e9;
+  color: var(--settings-text-primary);
 }
 
-/* 关闭按钮样式 */
-.close-button {
+.settings-close-button {
   width: 24px;
   height: 24px;
   padding: 4px;
   background: none;
   border: none;
-  color: #8e8ea0;
+  color: var(--settings-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--settings-radius-sm);
   transition: all 0.2s;
   font-size: 24px;
   line-height: 1;
 }
 
-.close-button:hover {
+.settings-close-button:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #e1e1e9;
+  color: var(--settings-text-primary);
 }
 
 /* 内容区 */
 .settings-content {
-  padding: 24px 28px 32px; /* 恢复底部padding为原来的32px */
+  padding: 24px 28px 32px;
   overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;
   max-height: calc(90vh - 120px);
-  background-color: #1e1e2d;
-  color: #e1e1e9;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  background-color: var(--settings-bg-primary);
+  color: var(--settings-text-primary);
+  border-bottom-left-radius: var(--settings-radius-lg);
+  border-bottom-right-radius: var(--settings-radius-lg);
 }
 
-/* 自定义滚动条样式 */
 .settings-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -126,14 +147,14 @@
 
 .settings-content::-webkit-scrollbar-thumb {
   background-color: rgba(142, 142, 160, 0.3);
-  border-radius: 4px;
+  border-radius: var(--settings-radius-sm);
 }
 
 .settings-content::-webkit-scrollbar-thumb:hover {
   background-color: rgba(142, 142, 160, 0.5);
 }
 
-/* 配置项组 */
+/* 配置项 */
 .settings-section {
   display: flex;
   flex-direction: column;
@@ -141,21 +162,21 @@
 }
 
 .settings-section:last-child {
-  margin-bottom: 16px; /* 添加一个适当的底部间距 */
+  margin-bottom: 16px;
 }
 
 .settings-section-title {
   font-size: 14px;
-  color: #8e8ea0;
+  color: var(--settings-text-secondary);
   font-weight: normal;
 }
 
-/* 输入框和下拉框基础样式 */
+/* 表单元素 */
 .settings-input {
-  background-color: #0d0d14;
-  border: 1px solid #2f2f3d;
-  border-radius: 6px;
-  color: #e1e1e9;
+  background-color: var(--settings-bg-input);
+  border: 1px solid var(--settings-border-default);
+  border-radius: var(--settings-radius-md);
+  color: var(--settings-text-primary);
   padding: 10px 12px;
   font-size: 14px;
   width: 100%;
@@ -165,53 +186,48 @@
   -webkit-box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-}
-
-/* 输入框 */
-.settings-input {
   appearance: none;
   -webkit-appearance: none;
-  background: #0d0d14 !important;
 }
 
 .settings-input:hover {
-  border-color: #3f3f4d;
-  background: #13131c !important;
+  border-color: var(--settings-border-hover);
+  background: var(--settings-bg-input-hover) !important;
 }
 
 .settings-input:focus {
-  border-color: #4a3b89;
-  background: #13131c !important;
+  border-color: var(--settings-border-focus);
+  background: var(--settings-bg-input-hover) !important;
   outline: none;
 }
 
 .settings-input::placeholder {
-  color: #6b6b80;
+  color: var(--settings-text-tertiary);
 }
 
-/* React Select 自定义样式 */
+/* React Select 样式 */
 .settings-select__control {
-  background-color: #0d0d14 !important;
-  border: 1px solid #2f2f3d !important;
-  border-radius: 6px !important;
+  background-color: var(--settings-bg-input) !important;
+  border: 1px solid var(--settings-border-default) !important;
+  border-radius: var(--settings-radius-md) !important;
   min-height: 40px !important;
   box-shadow: none !important;
 }
 
 .settings-select__control:hover {
-  border-color: #3f3f4d !important;
-  background-color: #13131c !important;
+  border-color: var(--settings-border-hover) !important;
+  background-color: var(--settings-bg-input-hover) !important;
 }
 
 .settings-select__control--is-focused {
-  border-color: #4a3b89 !important;
-  background-color: #13131c !important;
+  border-color: var(--settings-border-focus) !important;
+  background-color: var(--settings-bg-input-hover) !important;
 }
 
 .settings-select__menu {
-  background-color: #0d0d14 !important;
-  border: 1px solid #2f2f3d !important;
-  border-radius: 6px !important;
+  background-color: var(--settings-bg-input) !important;
+  border: 1px solid var(--settings-border-default) !important;
+  border-radius: var(--settings-radius-md) !important;
   margin-top: 4px !important;
   z-index: 1000000 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
@@ -225,73 +241,63 @@
   padding: 6px 12px !important;
   font-size: 14px !important;
   cursor: pointer !important;
-  background-color: #0d0d14 !important;
-  color: #e1e1e9 !important;
+  background-color: var(--settings-bg-input) !important;
+  color: var(--settings-text-primary) !important;
   min-height: 32px !important;
   display: flex !important;
   align-items: center !important;
 }
 
-.settings-select__option:hover {
-  background-color: #1a1a24 !important;
-}
-
+.settings-select__option:hover,
 .settings-select__option--is-focused {
   background-color: #1a1a24 !important;
 }
 
 .settings-select__option--is-selected {
-  background-color: #4a3b89 !important;
+  background-color: var(--settings-highlight) !important;
   color: #fff !important;
 }
 
-/* 选中且悬浮的状态 */
 .settings-select__option--is-selected:hover {
-  background-color: #5a4b99 !important;
+  background-color: var(--settings-highlight-hover) !important;
 }
 
 .settings-select__single-value {
-  color: #e1e1e9 !important;
+  color: var(--settings-text-primary) !important;
 }
 
 .settings-select__input {
-  color: #e1e1e9 !important;
+  color: var(--settings-text-primary) !important;
 }
 
 .settings-select__placeholder {
-  color: #6b6b80 !important;
+  color: var(--settings-text-tertiary) !important;
 }
 
 .settings-select__indicator-separator {
-  background-color: #2f2f3d !important;
+  background-color: var(--settings-border-default) !important;
+}
+
+.settings-select__dropdown-indicator,
+.settings-select__clear-indicator {
+  color: var(--settings-text-tertiary) !important;
 }
 
 .settings-select__dropdown-indicator {
-  color: #6b6b80 !important;
   padding: 0 12px !important;
 }
 
-.settings-select__dropdown-indicator:hover {
-  color: #e1e1e9 !important;
-}
-
 .settings-select__clear-indicator {
-  color: #6b6b80 !important;
   padding: 0 8px !important;
 }
 
+.settings-select__dropdown-indicator:hover,
 .settings-select__clear-indicator:hover {
-  color: #e1e1e9 !important;
+  color: var(--settings-text-primary) !important;
 }
 
 .settings-select__value-container {
   padding: 2px 8px !important;
-}
-
-.settings-select__no-options-message {
-  color: #6b6b80 !important;
-  text-align: center !important;
-  padding: 10px !important;
 }
 
 .settings-select__control--is-disabled {
@@ -299,85 +305,36 @@
   cursor: not-allowed !important;
 }
 
-/* Select 组件样式 */
-.select-control {
-  background-color: #0d0d14;
-  border: 1px solid #2f2f3d;
-  border-radius: 6px;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  color: #e1e1e9;
-  transition: all 0.2s;
-}
-
-.select-control:hover {
-  border-color: #3f3f4d;
-  background-color: #13131c;
-}
-
-.select-menu {
-  margin-top: 4px;
-  background-color: #0d0d14;
-  border: 1px solid #2f2f3d;
-  border-radius: 6px;
-  color: #e1e1e9;
-  position: absolute;
-  z-index: 1000000;
-  width: 100%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
-}
-
-.select-menu-list {
-  padding: 4px 0;
-}
-
-.select-option {
-  padding: 6px 12px;
-  cursor: pointer;
-  background-color: transparent;
-  color: #e1e1e9;
-  transition: all 0.2s;
-  font-size: 14px;
-  line-height: 1.2;
-}
-
-.select-option:hover,
-.select-option:focus {
-  background-color: #4a3b89 !important;
-  color: #ffffff;
-}
-
-/* 错误提示和提示文本 */
+/* 辅助元素 */
 .settings-error {
   margin: 16px 0;
   padding: 12px;
   background-color: rgba(255, 77, 79, 0.1);
   border: 1px solid rgba(255, 77, 79, 0.2);
-  border-radius: 6px;
-  color: #ff4d4f;
+  border-radius: var(--settings-radius-md);
+  color: var(--settings-error);
   font-size: 13px;
 }
 
 .settings-hint {
   margin-top: 8px;
-  color: #8e8ea0;
+  color: var(--settings-text-secondary);
   font-size: 12px;
 }
 
-/* 响应式调整 */
+/* 响应式 */
 @media (max-width: 480px) {
   .settings-modal {
     width: 95%;
   }
   
-  .settings-header {
+  .settings-header,
+  .settings-footer {
     padding: 12px 20px;
   }
   
   .settings-content {
-    padding: 20px 20px;
+    padding: 20px;
   }
   
   .settings-input-group {
@@ -387,35 +344,5 @@
   
   .settings-button-container {
     margin-top: 20px;
-  }
-  
-  .settings-footer {
-    padding: 12px 20px;
-  }
-}
-
-/* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-  .settings-modal {
-    background-color: #1a202c;
-  }
-
-  .settings-input {
-    background-color: #2d3748;
-    border-color: #4a5568;
-    color: #e2e8f0;
-  }
-
-  .settings-input:hover:not(:disabled) {
-    border-color: #718096;
-  }
-
-  .settings-input:disabled {
-    background-color: #2d3748;
-    opacity: 0.5;
-  }
-
-  .validation-error {
-    color: #fc8181;
   }
 }

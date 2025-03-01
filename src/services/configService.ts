@@ -62,7 +62,6 @@ class ConfigService {
   async init(): Promise<void> {
     await this.loadConfig();
     this.configLoaded = true;
-    console.log('配置加载成功:', this.config);
   }
 
   /**
@@ -107,17 +106,13 @@ class ConfigService {
         // 验证解析后的配置是否有效
         if (parsedConfig && parsedConfig.apiConfig) {
           this.config = parsedConfig;
-          console.log('同步加载配置成功');
         } else {
-          console.warn('保存的配置格式无效，使用默认配置');
           this.config = { ...this.defaultConfig };
         }
       } else {
-        console.log('没有找到保存的配置，使用默认配置');
         this.config = { ...this.defaultConfig };
       }
     } catch (error) {
-      console.error('同步加载配置失败:', error);
       // 使用默认配置
       this.config = { ...this.defaultConfig };
       throw error;
@@ -136,18 +131,14 @@ class ConfigService {
           // 验证解析后的配置是否有效
           if (parsedConfig && parsedConfig.apiConfig) {
             this.config = parsedConfig;
-            console.log('异步加载配置成功');
           } else {
-            console.warn('保存的配置格式无效，使用默认配置');
             this.config = { ...this.defaultConfig };
           }
         } else {
-          console.log('没有找到保存的配置，使用默认配置');
           this.config = { ...this.defaultConfig };
         }
         resolve();
       } catch (error) {
-        console.error('异步加载配置失败:', error);
         // 使用默认配置
         this.config = { ...this.defaultConfig };
         reject(error);
@@ -163,10 +154,8 @@ class ConfigService {
       try {
         const configJson = JSON.stringify(this.config);
         localStorage.setItem(this.storageKey, configJson);
-        console.log('配置保存成功', configJson);
         resolve();
       } catch (error) {
-        console.error('保存配置失败:', error);
         reject(error);
       }
     });

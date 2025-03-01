@@ -46,7 +46,6 @@ export const getModelsList = async (): Promise<string[]> => {
   if (!providerConfig) throw new Error(`Provider ${apiConfig.provider} not found`)
 
   // 每次都从服务器获取最新的模型列表
-  console.log('正在从服务器获取模型列表...')
   
   const response = await fetch(`${providerConfig.endpoint}/models`, {
     method: 'GET',
@@ -63,7 +62,6 @@ export const getModelsList = async (): Promise<string[]> => {
   const data = await response.json()
   const models = data.data.map((model: any) => model.id)
   
-  console.log('成功获取模型列表:', models)
   return models
 }
 
@@ -91,8 +89,6 @@ export const getResponse = async ({
   temperature = 0.7,
   maxTokens = 2000
 }: ChatCompletionParams): Promise<string | null | ChatResponseMessage> => {
-  // 打印messages
-  console.log('messages:', messages)
   
   const client = new OpenAI({
     baseURL: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,
@@ -133,13 +129,9 @@ export const getResponse = async ({
     for await (const chunk of stream) {
       // 检查是否已取消请求
       if (signal?.aborted) {
-        console.log('请求已被中断')
         // 在中断循环之前，确保触发错误处理
         // 这样上层的handleError函数会被调用
         throw new DOMException('请求被用户取消', 'AbortError')
-        // 不需要break，因为throw会中断循环
-        // 这确保了中止状态能传递到上层
-        // break
       }
       
       const content = chunk.choices?.[0]?.delta?.content || ''

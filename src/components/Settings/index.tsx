@@ -2,10 +2,6 @@
  * Settings/index.tsx
  * 设置弹窗组件
  * 
- * 功能：
- * - API配置
- * - 模型选择
- * 
  * @author AI助手开发团队
  * @lastModified 2025-02-15
  */
@@ -22,19 +18,16 @@ interface SettingsProps {
   onClose: () => void
 }
 
-// Provider 选项接口
 interface ProviderOption {
   value: APIProvider
   label: string
 }
 
-// Provider 选项列表
 const providerOptions: ProviderOption[] = [
   { value: 'openrouter', label: 'OpenRouter' },
   { value: 'siliconflow', label: 'SiliconFlow' }
 ]
 
-// 设置状态接口
 interface SettingsState {
   apiProvider: APIProvider
   apiKeys: Record<APIProvider, string>
@@ -44,7 +37,6 @@ interface SettingsState {
   isOpen: boolean
 }
 
-// 初始状态
 const defaultState: SettingsState = {
   apiProvider: 'openrouter',
   apiKeys: {
@@ -70,21 +62,13 @@ export function Settings({ onClose }: SettingsProps) {
 
   // 加载模型列表
   const loadModels = useCallback(async () => {
-    console.log('Loading models...')  // 添加日志
     updateState({ isLoading: true })
     try {
       const models = await getModelsList()
-      console.log('Loaded models:', models)  // 添加日志
-      updateState({
-        models,
-        isLoading: false
-      })
+      updateState({ models, isLoading: false })
     } catch (error) {
       console.error('获取模型列表失败:', error)
-      updateState({ 
-        isLoading: false,
-        models: []  // 清空模型列表
-      })
+      updateState({ isLoading: false, models: [] })
     }
   }, [updateState])
 
@@ -95,17 +79,10 @@ export function Settings({ onClose }: SettingsProps) {
       setState(prev => ({
         ...prev,
         apiProvider: config.apiConfig.provider,
-        apiKeys: {
-          ...defaultState.apiKeys,
-          ...config.apiConfig.apiKeys
-        },
-        selectedModels: {
-          ...defaultState.selectedModels,
-          ...config.apiConfig.selectedModels
-        }
+        apiKeys: { ...defaultState.apiKeys, ...config.apiConfig.apiKeys },
+        selectedModels: { ...defaultState.selectedModels, ...config.apiConfig.selectedModels }
       }))
 
-      // 加载完配置后自动加载模型列表
       loadModels()
     } catch (error) {
       console.error('加载配置失败:', error)
@@ -115,61 +92,79 @@ export function Settings({ onClose }: SettingsProps) {
   // 保存配置并重新加载模型列表
   const saveConfigAndLoadModels = useCallback(async (updates: Partial<SettingsState>) => {
     try {
-      const newConfig = {
-        provider: updates.apiProvider || state.apiProvider,
-        apiKeys: updates.apiKeys || state.apiKeys,
-        selectedModels: updates.selectedModels || state.selectedModels
-      }
-      
-      // 先保存配置
-      await configService.updateConfig(newConfig)
-      
-      // 更新本地状态
-      updateState(updates)
-      
-      // 如果改变了 provider，重新加载模型列表
-      if (updates.apiProvider) {
-        loadModels()
-      }
+      setState(currentState => {
+        const newState = { ...currentState, ...updates };
+        
+        const newConfig = {
+          provider: newState.apiProvider,
+          apiKeys: newState.apiKeys,
+          selectedModels: newState.selectedModels
+        };
+        
+        configService.updateConfig(newConfig).then(() => {
+          if (updates.apiProvider) {
+            loadModels();
+          }
+        }).catch(error => {
+          console.error('保存配置失败:', error);
+        });
+        
+        return newState;
+      });
     } catch (error) {
-      console.error('保存配置失败:', error)
+      console.error('更新状态失败:', error)
     }
-  }, [state.apiProvider, state.apiKeys, state.selectedModels, loadModels])
+  }, [loadModels])
 
   // 处理 provider 变更
   const handleProviderChange = useCallback((provider: APIProvider) => {
-    console.log('Provider change:', provider)
-    saveConfigAndLoadModels({ 
-      apiProvider: provider,
-    })
+    saveConfigAndLoadModels({ apiProvider: provider })
   }, [saveConfigAndLoadModels])
 
   // 处理 API Key 变更
-  const handleApiKeyChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newApiKey = event.target.value
-    const newApiKeys = {
-      ...state.apiKeys,
-      [state.apiProvider]: newApiKey
-    }
-    updateState({ apiKeys: newApiKeys })
-  }, [state.apiProvider, state.apiKeys, updateState])
-
-  // 处理 API Key 失去焦点
-  const handleApiKeyBlur = useCallback(() => {
-    saveConfigAndLoadModels({ apiKeys: state.apiKeys })
-  }, [state.apiKeys, saveConfigAndLoadModels])
+  const handleApiKey = useCallback((event: React.ChangeEvent<HTMLInputElement>, saveOnChange = false) => {
+    const newApiKey = event.target.value;
+    setState(prev => {
+      const newApiKeys = {
+        ...prev.apiKeys,
+        [prev.apiProvider]: newApiKey
+      };
+      
+      if (saveOnChange) {
+        configService.updateConfig({
+          provider: prev.apiProvider,
+          apiKeys: newApiKeys,
+          selectedModels: prev.selectedModels
+        }).catch(error => {
+          console.error('保存API Key失败:', error);
+        });
+      }
+      
+      return { ...prev, apiKeys: newApiKeys };
+    });
+  }, [])
 
   // 处理模型选择
   const handleModelChange = useCallback((option: { value: string, label: string } | null) => {
-    const model = option?.value || ''
-    const newSelectedModels = {
-      ...state.selectedModels,
-      [state.apiProvider]: model
-    }
-    saveConfigAndLoadModels({ selectedModels: newSelectedModels })
-  }, [state.apiProvider, state.selectedModels, saveConfigAndLoadModels])
+    const model = option?.value || '';
+    setState(prev => {
+      const newSelectedModels = {
+        ...prev.selectedModels,
+        [prev.apiProvider]: model
+      };
+      
+      configService.updateConfig({
+        provider: prev.apiProvider,
+        apiKeys: prev.apiKeys,
+        selectedModels: newSelectedModels
+      }).catch(error => {
+        console.error('保存模型选择失败:', error);
+      });
+      
+      return { ...prev, selectedModels: newSelectedModels };
+    });
+  }, [])
 
-  // 初始化加载
   useEffect(() => {
     loadConfig()
   }, [loadConfig])
@@ -179,7 +174,7 @@ export function Settings({ onClose }: SettingsProps) {
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
           <h2 className="settings-title">系统设置</h2>
-          <button className="close-button" onClick={onClose}>
+          <button className="settings-close-button" onClick={onClose}>
             <span>×</span>
           </button>
         </div>
@@ -210,8 +205,8 @@ export function Settings({ onClose }: SettingsProps) {
               type="text"
               className="settings-input"
               value={state.apiKeys[state.apiProvider] || ''}
-              onChange={handleApiKeyChange}
-              onBlur={handleApiKeyBlur}
+              onChange={e => handleApiKey(e)}
+              onBlur={e => handleApiKey(e, true)}
               placeholder={`请输入 ${providerOptions.find(option => option.value === state.apiProvider)?.label} API Key`}
             />
           </div>
