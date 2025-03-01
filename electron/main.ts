@@ -1,41 +1,42 @@
 /**
  * main.ts
- * Electron主进程入口文件
+ * Electron main process entry file
  * 
- * 功能：
- * - 创建和管理应用窗口
- * - 处理应用生命周期
- * - 注册全局快捷键
- * - 配置应用菜单和托盘
- * - 管理进程间通信
+ * Features:
+ * - Create and manage application windows
+ * - Handle application lifecycle
+ * - Register global shortcuts
+ * - Configure application menu and tray
+ * - Manage inter-process communication
+ * - Initialize and manage plugin system
  * 
- * @author AI助手开发团队
- * @lastModified 2025-02-25
+ * @author AI Assistant Development Team
+ * @lastModified 2025-03-01
  */
 
 import { app, BrowserWindow, globalShortcut } from 'electron'
 import { APP_CONFIG, IS_MAC } from './config'
 import { IPCHandler } from './ipc'
-import ToolManager from './tools/toolManager'
+import PluginManager from './plugins/pluginManager'
 
 /**
- * 主应用程序类
- * 负责管理应用的生命周期和窗口
+ * Main application class
+ * Responsible for managing application lifecycle and windows
  */
 class MainApp {
   private window: BrowserWindow | null = null
 
   /**
-   * 初始化应用程序
-   * 创建窗口、注册事件处理程序和IPC通信
-   * @throws 初始化失败时抛出错误
+   * Initialize application
+   * Create window, register event handlers and IPC communication
+   * @throws Error when initialization fails
    */
   public async init(): Promise<void> {
     try {
       await app.whenReady()
       
-      // 初始化工具管理器
-      ToolManager.getInstance().initializeTools();
+      // Initialize plugin system
+      await PluginManager.getInstance().initializePlugins();
       
       this.registerApplicationEvents()
       IPCHandler.init()
@@ -47,20 +48,20 @@ class MainApp {
   }
 
   /**
-   * 创建主窗口
-   * 根据环境配置加载不同的页面内容
+   * Create main window
+   * Load different page content based on environment configuration
    */
   private async createWindow(): Promise<void> {
     const browserWindow = new BrowserWindow(APP_CONFIG.WINDOW)
     
     this.window = browserWindow
 
-    // 窗口准备就绪后显示
+    // Show window when ready
     browserWindow.once('ready-to-show', () => {
       browserWindow.show()
     })
 
-    // 根据环境加载页面
+    // Load page based on environment
     if (APP_CONFIG.DEVELOPMENT.VITE_DEV_SERVER_URL) {
       await browserWindow.loadURL(APP_CONFIG.DEVELOPMENT.VITE_DEV_SERVER_URL)
     } else {
@@ -69,14 +70,14 @@ class MainApp {
   }
 
   /**
-   * 注册应用程序事件处理程序
-   * 包括：
-   * - 窗口关闭事件
-   * - 应用激活事件（macOS）
-   * - 开发者工具快捷键
+   * Register application event handlers
+   * Including:
+   * - Window close event
+   * - Application activation event (macOS)
+   * - Developer tool shortcuts
    */
   private registerApplicationEvents(): void {
-    // 处理窗口关闭事件
+    // Handle window close event
     app.on('window-all-closed', () => {
       this.window = null
       if (!IS_MAC) {
@@ -84,14 +85,14 @@ class MainApp {
       }
     })
 
-    // 处理应用激活事件（macOS）
+    // Handle application activation event (macOS)
     app.on('activate', async () => {
       if (!this.window) {
         await this.createWindow()
       }
     })
 
-    // 注册开发者工具快捷键
+    // Register developer tool shortcuts
     globalShortcut.register('CommandOrControl+Shift+I', () => {
       if (this.window) {
         this.window.webContents.toggleDevTools()
@@ -100,6 +101,6 @@ class MainApp {
   }
 }
 
-// 启动应用实例
+// Start application instance
 const mainApp = new MainApp()
 mainApp.init().catch(console.error)
