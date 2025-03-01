@@ -1,14 +1,9 @@
 /**
- * components/index.ts
- * 组件导出文件
+ * 组件统一导出
  * 
- * 导出：
- * - InputArea: 输入区组件
- * - MessageList: 消息列表组件
- * - Settings: 设置组件
- * 
- * @author AI助手开发团队
- * @lastModified 2025-03-01
+ * - InputArea: 用户输入区
+ * - MessageList: 聊天消息列表
+ * - Settings: 系统设置
  */
 
 export { default as InputArea } from './InputArea'

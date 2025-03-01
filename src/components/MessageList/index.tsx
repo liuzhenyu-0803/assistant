@@ -1,9 +1,7 @@
 /**
- * 消息列表组件
+ * 消息列表
  * 
- * 功能: 展示对话历史记录，自动滚动到最新消息
- * 
- * @lastModified 2025-03-01
+ * 功能：展示对话记录、自动滚动至最新消息
  */
 
 import React, { useEffect, useRef } from 'react'

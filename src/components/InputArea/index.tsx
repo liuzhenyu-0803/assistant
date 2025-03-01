@@ -1,9 +1,7 @@
 /**
- * 消息输入区组件
+ * 用户输入区
  * 
- * 功能: 文本输入编辑、快捷键支持、工具栏、状态管理
- * 
- * @lastModified 2025-03-01
+ * 功能：文本输入、快捷键响应、发送控制
  */
 
 import React, { useState, useRef } from 'react'

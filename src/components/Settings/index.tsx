@@ -1,9 +1,7 @@
 /**
- * Settings/index.tsx
- * 设置弹窗组件
+ * 设置面板
  * 
- * @author AI助手开发团队
- * @lastModified 2025-02-15
+ * 功能：API配置、模型选择、系统设置
  */
 
 import React, { useState, useEffect, useCallback } from 'react'

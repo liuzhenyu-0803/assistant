@@ -1,9 +1,7 @@
 /**
  * 消息项组件
  * 
- * 功能: 展示单条消息内容，支持不同角色和状态显示
- * 
- * @lastModified 2025-03-01
+ * 功能：展示单条消息内容、支持Markdown渲染
  */
 
 import React, { useMemo } from 'react'
