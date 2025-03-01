@@ -30,8 +30,13 @@
 import React, { useState, useRef } from 'react'
 import { InputAreaProps } from '../../types'
 import { cleanText, isEmptyText } from '../../utils/helpers'
-import Icon from '../Icon'
 import './styles.css'
+
+// 直接导入SVG图标
+import sendIcon from '../../assets/icons/send.svg'
+import stopIcon from '../../assets/icons/stop.svg'
+import settingsIcon from '../../assets/icons/settings.svg'
+import clearIcon from '../../assets/icons/clear.svg'
 
 /**
  * 输入区组件
@@ -145,7 +150,7 @@ export function InputArea({
             onClick={onOpenSettings}
             title="设置"
           >
-            <Icon type="settings" />
+            <img src={settingsIcon} className="icon" alt="设置" />
           </button>
           {/* 清空会话按钮 */}
           <button 
@@ -153,7 +158,7 @@ export function InputArea({
             onClick={onClearConversation}
             title="清空会话"
           >
-            <Icon type="clear" />
+            <img src={clearIcon} className="icon" alt="清空" />
           </button>
           {/* 发送/停止按钮 */}
           <button
@@ -162,7 +167,11 @@ export function InputArea({
             disabled={message.trim().length === 0 && !isReceiving}
             title={isReceiving ? '停止接收' : '发送消息'}
           >
-            <Icon type={isReceiving ? 'stop' : 'send'} />
+            <img 
+              src={isReceiving ? stopIcon : sendIcon} 
+              className="icon" 
+              alt={isReceiving ? '停止' : '发送'} 
+            />
           </button>
         </div>
       </div>

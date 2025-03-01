@@ -117,6 +117,15 @@
   color: #ff4d4f;  /* 错误红色 */
 }
 
+/* 图标基础样式 - 从Icon组件迁移而来 */
+.icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  margin: auto;
+  transition: transform 0.2s ease;
+}
+
 /* 工具栏右侧按钮组 */
 .toolbar-right {
   display: flex;
