@@ -7,7 +7,6 @@
  * - 消息列表组件类型：MessageList.ts - 对话消息展示
  * - 设置组件类型：Settings.ts - 应用配置界面
  * - 渲染器组件类型：Renderers.ts - 内容渲染组件
- * - 配置类型：Config.ts - 系统配置数据结构
  * 
  * @module types/components
  * @version 1.0.0
@@ -28,6 +27,3 @@ export * from './Settings';
 
 // 渲染器组件类型
 export * from './Renderers';
-
-// 配置类型
-export * from './Config';

@@ -10,15 +10,12 @@
  */
 
 import { APIConfig } from '../services/api';
-import { UIConfig, ShortcutConfig } from './Config';
 
 /**
  * 设置数据接口
  * 
  * 定义应用所有可配置的设置项，包括：
  * - API配置（提供商、密钥等）
- * - UI配置（主题、布局等）
- * - 快捷键配置
  */
 export interface SettingsData {
   /**
@@ -26,18 +23,6 @@ export interface SettingsData {
    * 包含API提供商、密钥和模型选择等配置
    */
   api: APIConfig;
-  
-  /**
-   * 用户界面设置
-   * 控制应用的视觉和交互体验
-   */
-  ui: UIConfig;
-  
-  /**
-   * 快捷键设置（可选）
-   * 定义各种操作的键盘快捷方式
-   */
-  shortcuts?: ShortcutConfig;
 }
 
 /**
