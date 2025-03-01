@@ -1,9 +1,5 @@
 /**
- * Icon/styles.css
- * 统一的图标组件样式
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-25
+ * 图标组件样式
  */
 
 .icon {
@@ -12,18 +8,4 @@
   display: block;
   margin: auto;
   transition: transform 0.2s ease;
-}
-
-/* 图标旋转动画 */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.icon.spinning {
-  animation: spin 1s linear infinite;
 }
