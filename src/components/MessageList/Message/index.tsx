@@ -17,14 +17,15 @@ export function Message({ message }: MessageProps) {
     let content = message.content
     let styleType: string = message.role
 
-    // 处理assistant消息的不同情况
+    // 处理消息的不同状态和内容
     if (message.role === 'assistant') {
-      // 处理函数调用优先级高于其他状态
+      // 1. 处理函数调用 - 优先级最高
       if (message.function_call) {
         styleType = 'function-call'
         content = `正在调用工具: ${message.function_call.name}`
-      } else {
-        // 处理不同消息状态
+      } 
+      // 2. 处理消息状态
+      else {
         switch (message.status) {
           case 'waiting':
             content = '正在思考...'
@@ -49,15 +50,10 @@ export function Message({ message }: MessageProps) {
       }
     }
     
-    // 确保用户消息也不为空
-    if (message.role === 'user' && (!content || content.trim() === '')) {
-      content = '*空消息*'
-    }
-    
     return { formattedContent: content, messageStyleType: styleType }
   }, [message])
 
-  // 构建最终的className
+  // 构建最终的className，保留原来的error类处理逻辑
   const className = `message-item ${messageStyleType} ${message.status === 'error' ? 'error' : ''}`
 
   return (
