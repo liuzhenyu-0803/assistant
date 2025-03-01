@@ -9,7 +9,6 @@ import * as iconv from 'iconv-lite';
 
 /**
  * 命令行工具插件类
- * 实现ToolPlugin接口
  */
 class CommandToolPlugin implements ToolPlugin {
   /**
@@ -29,7 +28,6 @@ class CommandToolPlugin implements ToolPlugin {
    * 插件初始化
    */
   public async initialize(): Promise<void> {
-    // 初始化命令行处理环境
     console.log('Command line tool plugin initialized');
   }
 
@@ -37,7 +35,6 @@ class CommandToolPlugin implements ToolPlugin {
    * 插件销毁
    */
   public async destroy(): Promise<void> {
-    // 命令行工具不需要特殊清理
     console.log('Command line tool plugin destroyed');
   }
 

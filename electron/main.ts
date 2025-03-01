@@ -5,13 +5,7 @@
  * 功能：
  * - 创建和管理应用程序窗口
  * - 处理应用程序生命周期
- * - 注册全局快捷键
- * - 配置应用菜单和托盘
- * - 管理进程间通信
  * - 初始化和管理插件系统
- * 
- * @author AI助手开发团队
- * @lastModified 2025-03-01
  */
 
 import { app, BrowserWindow, globalShortcut } from 'electron'
@@ -71,10 +65,6 @@ class MainApp {
 
   /**
    * 注册应用程序事件处理程序
-   * 包括：
-   * - 窗口关闭事件
-   * - 应用程序激活事件（macOS）
-   * - 开发工具快捷键
    */
   private registerApplicationEvents(): void {
     // 处理窗口关闭事件

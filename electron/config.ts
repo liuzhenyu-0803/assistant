@@ -5,12 +5,6 @@
  * 功能：
  * - 管理应用配置的读写
  * - 提供配置文件的默认值
- * - 验证配置数据格式
- * - 处理配置迁移和升级
- * - 确保配置文件安全性
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-17
  */
 
 import { app, nativeImage } from 'electron'

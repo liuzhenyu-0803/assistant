@@ -5,9 +5,6 @@
  * 功能：
  * - 处理主进程和渲染进程之间的通信
  * - 处理与插件和工具相关的IPC事件
- * 
- * @author AI助手开发团队
- * @lastModified 2025-03-01
  */
 
 import { ipcMain } from 'electron'

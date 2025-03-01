@@ -9,7 +9,6 @@ import { PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../../types'
 
 /**
  * 文件工具插件类
- * 实现ToolPlugin接口
  */
 class FileToolPlugin implements ToolPlugin {
   /**
@@ -110,10 +109,8 @@ class FileToolPlugin implements ToolPlugin {
         };
       }
 
-      // 确保路径安全
       const filePath = path.normalize(params.path);
       
-      // 检查文件是否存在
       if (!fs.existsSync(filePath)) {
         return {
           success: false,
@@ -121,7 +118,6 @@ class FileToolPlugin implements ToolPlugin {
         };
       }
 
-      // 读取文件内容
       const content = fs.readFileSync(filePath, 'utf8');
       
       return {
@@ -161,13 +157,11 @@ class FileToolPlugin implements ToolPlugin {
 
       const filePath = path.normalize(params.path);
       
-      // 确保目录存在
       const dirname = path.dirname(filePath);
       if (!fs.existsSync(dirname)) {
         fs.mkdirSync(dirname, { recursive: true });
       }
       
-      // 写入文件
       if (params.append && fs.existsSync(filePath)) {
         fs.appendFileSync(filePath, params.content, 'utf8');
       } else {
@@ -203,7 +197,6 @@ class FileToolPlugin implements ToolPlugin {
 
       const dirPath = path.normalize(params.path);
       
-      // 检查目录是否存在
       if (!fs.existsSync(dirPath)) {
         return {
           success: false,
@@ -211,7 +204,6 @@ class FileToolPlugin implements ToolPlugin {
         };
       }
       
-      // 检查路径是否是目录
       const stats = fs.statSync(dirPath);
       if (!stats.isDirectory()) {
         return {
@@ -220,7 +212,6 @@ class FileToolPlugin implements ToolPlugin {
         };
       }
       
-      // 读取目录内容
       const items = fs.readdirSync(dirPath, { withFileTypes: true }).map(item => {
         const itemPath = path.join(dirPath, item.name);
         const itemStats = fs.statSync(itemPath);
