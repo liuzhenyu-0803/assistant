@@ -76,7 +76,7 @@ export function CodeBlock({
         code={codeContent}
         language={language || 'text'}
       >
-        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        {({ tokens, getLineProps, getTokenProps }) => (
           <div className="code-content">
             {tokens.map((line, i) => (
               <div key={i} {...getLineProps({ line })}>
