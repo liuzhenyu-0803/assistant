@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 定义渐变背景 -->
+  <defs>
+    <linearGradient id="grad6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8C00"/>
+      <stop offset="100%" stop-color="#FF1493"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景圆 -->
+  <circle cx="100" cy="100" r="90" fill="url(#grad6)" />
+  
+  <!-- 八条放射曲线 -->
+  <path d="M100,100 C100,60 110,30 100,20" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C140,100 170,110 180,100" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C100,140 90,170 100,180" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C60,100 30,90 20,100" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C130,70 150,50 150,40" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C130,130 150,150 150,160" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C70,130 50,150 50,160" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M100,100 C70,70 50,50 50,40" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+</svg>
