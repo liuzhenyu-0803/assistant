@@ -18,10 +18,10 @@ class FileToolPlugin implements ToolPlugin {
   public getInfo(): PluginInfo {
     return {
       id: 'builtin.file-tool',
-      name: 'File Tool',
+      name: '文件工具',
       version: '1.0.0',
-      description: 'Provides file operation functionality',
-      author: 'AI Assistant Development Team'
+      description: '提供文件操作功能',
+      author: 'AI助手开发团队'
     };
   }
 
@@ -46,12 +46,12 @@ class FileToolPlugin implements ToolPlugin {
     return [
       {
         name: 'read_file',
-        description: 'Reads file content',
+        description: '读取文件内容',
         parameters: [
           {
             name: 'path',
             type: 'string',
-            description: 'File path',
+            description: '文件路径',
             required: true
           }
         ],
@@ -59,24 +59,24 @@ class FileToolPlugin implements ToolPlugin {
       },
       {
         name: 'write_file',
-        description: 'Writes file content',
+        description: '写入文件内容',
         parameters: [
           {
             name: 'path',
             type: 'string',
-            description: 'File path',
+            description: '文件路径',
             required: true
           },
           {
             name: 'content',
             type: 'string',
-            description: 'Content to write',
+            description: '要写入的内容',
             required: true
           },
           {
             name: 'append',
             type: 'boolean',
-            description: 'Whether to append content, defaults to false',
+            description: '是否追加内容，默认为false',
             required: false
           }
         ],
@@ -84,12 +84,12 @@ class FileToolPlugin implements ToolPlugin {
       },
       {
         name: 'list_directory',
-        description: 'Lists directory content',
+        description: '列出目录内容',
         parameters: [
           {
             name: 'path',
             type: 'string',
-            description: 'Directory path',
+            description: '目录路径',
             required: true
           }
         ],
@@ -211,26 +211,26 @@ class FileToolPlugin implements ToolPlugin {
         };
       }
       
-      // 检查是否为目录
-      if (!fs.statSync(dirPath).isDirectory()) {
+      // 检查路径是否是目录
+      const stats = fs.statSync(dirPath);
+      if (!stats.isDirectory()) {
         return {
           success: false,
-          error: `${dirPath} is not a directory`
+          error: 'The specified path is not a directory'
         };
       }
       
-      // 获取目录内容
-      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-      const items = entries.map(entry => {
-        const entryPath = path.join(dirPath, entry.name);
-        const stats = fs.statSync(entryPath);
+      // 读取目录内容
+      const items = fs.readdirSync(dirPath, { withFileTypes: true }).map(item => {
+        const itemPath = path.join(dirPath, item.name);
+        const itemStats = fs.statSync(itemPath);
         
         return {
-          name: entry.name,
-          path: entryPath,
-          isDirectory: entry.isDirectory(),
-          size: stats.size,
-          modified: stats.mtime
+          name: item.name,
+          path: itemPath,
+          isDirectory: item.isDirectory(),
+          size: itemStats.size,
+          modified: itemStats.mtime
         };
       });
       

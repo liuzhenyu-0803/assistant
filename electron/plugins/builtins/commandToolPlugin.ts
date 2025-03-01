@@ -18,10 +18,10 @@ class CommandToolPlugin implements ToolPlugin {
   public getInfo(): PluginInfo {
     return {
       id: 'builtin.command-tool',
-      name: 'Command Tool',
+      name: '命令行工具',
       version: '1.0.0',
-      description: 'Provides command line operation functionality',
-      author: 'AI Assistant Development Team'
+      description: '提供命令行操作功能',
+      author: 'AI助手开发团队'
     };
   }
 

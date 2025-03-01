@@ -1,12 +1,12 @@
 /**
  * ipc.ts
- * IPC communication module
+ * IPC通信模块
  * 
- * Features:
- * - Handle communication between main process and renderer process
- * - Handle IPC events related to plugins and tools
+ * 功能：
+ * - 处理主进程和渲染进程之间的通信
+ * - 处理与插件和工具相关的IPC事件
  * 
- * @author AI Assistant Development Team
+ * @author AI助手开发团队
  * @lastModified 2025-03-01
  */
 
@@ -14,12 +14,12 @@ import { ipcMain } from 'electron'
 import PluginManager from './plugins/pluginManager'
 
 /**
- * IPC Handler Class
- * Responsible for managing all IPC event handlers
+ * IPC处理器类
+ * 负责管理所有IPC事件处理程序
  */
 export class IPCHandler {
   /**
-   * Initialize all IPC handlers
+   * 初始化所有IPC处理程序
    */
   public static init(): void {
     this.registerIPCHandlers()
@@ -27,22 +27,22 @@ export class IPCHandler {
   }
 
   /**
-   * Register all IPC handlers
+   * 注册所有IPC处理程序
    */
   private static registerIPCHandlers(): void {
     const pluginManager = PluginManager.getInstance()
 
-    // Get all plugin information
+    // 获取所有插件信息
     ipcMain.handle('get-plugins-info', () => {
       return pluginManager.getPluginsInfo()
     })
 
-    // Get all tool descriptions
+    // 获取所有工具描述
     ipcMain.handle('get-tool-descriptions', () => {
       return pluginManager.getAllToolDefinitions()
     })
 
-    // Execute tool
+    // 执行工具
     ipcMain.handle('execute-tool', async (_, toolName: string, params: any) => {
       return await pluginManager.executeTool(toolName, params)
     })

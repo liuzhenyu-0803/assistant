@@ -10,6 +10,28 @@
 1. **内置插件**：这些插件直接集成到应用程序中
 2. **外部插件**：这些插件作为独立模块放置在应用程序的插件目录中
 
+## 插件依赖管理
+
+插件系统支持自动依赖管理：
+
+1. **内置插件**：所有依赖应包含在主应用程序的`package.json`中。
+2. **外部插件**：在插件目录下创建`package.json`文件声明依赖，插件系统将自动安装。
+
+示例外部插件的`package.json`：
+
+```json
+{
+  "name": "my-external-plugin",
+  "version": "1.0.0",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "moment": "^2.29.4"
+  }
+}
+```
+
+当插件系统加载外部插件时，会自动检测`package.json`文件并执行`npm install`来安装依赖，无需手动操作。
+
 ## 创建新插件
 
 ### 1. 创建一个工具插件
@@ -109,7 +131,8 @@ private async loadBuiltinPlugins(): Promise<void> {
 ```
 plugins/
   my-external-plugin/
-    index.js   # 插件入口点
+    index.js        # 插件入口点
+    package.json    # 依赖定义（可选，但推荐）
     ... 其他文件
 ```
 

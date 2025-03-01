@@ -1,16 +1,16 @@
 /**
  * main.ts
- * Electron main process entry file
+ * Electron主进程入口文件
  * 
- * Features:
- * - Create and manage application windows
- * - Handle application lifecycle
- * - Register global shortcuts
- * - Configure application menu and tray
- * - Manage inter-process communication
- * - Initialize and manage plugin system
+ * 功能：
+ * - 创建和管理应用程序窗口
+ * - 处理应用程序生命周期
+ * - 注册全局快捷键
+ * - 配置应用菜单和托盘
+ * - 管理进程间通信
+ * - 初始化和管理插件系统
  * 
- * @author AI Assistant Development Team
+ * @author AI助手开发团队
  * @lastModified 2025-03-01
  */
 
@@ -20,22 +20,22 @@ import { IPCHandler } from './ipc'
 import PluginManager from './plugins/pluginManager'
 
 /**
- * Main application class
- * Responsible for managing application lifecycle and windows
+ * 主应用类
+ * 负责管理应用程序生命周期和窗口
  */
 class MainApp {
   private window: BrowserWindow | null = null
 
   /**
-   * Initialize application
-   * Create window, register event handlers and IPC communication
-   * @throws Error when initialization fails
+   * 初始化应用程序
+   * 创建窗口，注册事件处理程序和IPC通信
+   * @throws Error 当初始化失败时抛出
    */
   public async init(): Promise<void> {
     try {
       await app.whenReady()
       
-      // Initialize plugin system
+      // 初始化插件系统
       await PluginManager.getInstance().initializePlugins();
       
       this.registerApplicationEvents()
@@ -48,20 +48,20 @@ class MainApp {
   }
 
   /**
-   * Create main window
-   * Load different page content based on environment configuration
+   * 创建主窗口
+   * 根据环境配置加载不同的页面内容
    */
   private async createWindow(): Promise<void> {
     const browserWindow = new BrowserWindow(APP_CONFIG.WINDOW)
     
     this.window = browserWindow
 
-    // Show window when ready
+    // 准备好时显示窗口
     browserWindow.once('ready-to-show', () => {
       browserWindow.show()
     })
 
-    // Load page based on environment
+    // 根据环境加载页面
     if (APP_CONFIG.DEVELOPMENT.VITE_DEV_SERVER_URL) {
       await browserWindow.loadURL(APP_CONFIG.DEVELOPMENT.VITE_DEV_SERVER_URL)
     } else {
@@ -70,14 +70,14 @@ class MainApp {
   }
 
   /**
-   * Register application event handlers
-   * Including:
-   * - Window close event
-   * - Application activation event (macOS)
-   * - Developer tool shortcuts
+   * 注册应用程序事件处理程序
+   * 包括：
+   * - 窗口关闭事件
+   * - 应用程序激活事件（macOS）
+   * - 开发工具快捷键
    */
   private registerApplicationEvents(): void {
-    // Handle window close event
+    // 处理窗口关闭事件
     app.on('window-all-closed', () => {
       this.window = null
       if (!IS_MAC) {
@@ -85,14 +85,14 @@ class MainApp {
       }
     })
 
-    // Handle application activation event (macOS)
+    // 处理应用程序激活事件（macOS）
     app.on('activate', async () => {
       if (!this.window) {
         await this.createWindow()
       }
     })
 
-    // Register developer tool shortcuts
+    // 注册开发者工具快捷键
     globalShortcut.register('CommandOrControl+Shift+I', () => {
       if (this.window) {
         this.window.webContents.toggleDevTools()
@@ -101,6 +101,6 @@ class MainApp {
   }
 }
 
-// Start application instance
+// 启动应用程序实例
 const mainApp = new MainApp()
-mainApp.init().catch(console.error)
+mainApp.init().catch((error) => console.error('An error occurred:', error))
