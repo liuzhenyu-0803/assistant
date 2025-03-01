@@ -7,8 +7,8 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Message, ToastData, MessageStatus, FunctionCall } from './types'
-import { MessageList, InputArea, Settings, Toast } from './components'
+import { Message, MessageStatus, FunctionCall } from './types'
+import { MessageList, InputArea, Settings } from './components'
 import { handleMessageSend, createMessage } from './services/messageService'
 import { configService } from './services/configService' 
 import './App.css'
@@ -19,7 +19,6 @@ function App() {
   const [chatStatus, setChatStatus] = useState<MessageStatus>('idle')
   const [messageController, setMessageController] = useState<AbortController | null>(null)
   const [isSettingsVisible, setSettingsVisible] = useState(false)
-  const [toastData, setToastData] = useState<ToastData | null>(null)
 
   useEffect(() => {
     const initConfig = async () => {
@@ -28,11 +27,6 @@ function App() {
         console.log('配置初始化成功')
       } catch (error) {
         console.error('配置初始化失败:', error)
-        setToastData({
-          type: 'error',
-          message: '加载配置失败，将使用默认配置',
-          duration: 5000
-        })
       } finally {
         setIsLoading(false)
       }
@@ -161,15 +155,6 @@ function App() {
       
       {isSettingsVisible && (
         <Settings onClose={closeSettings} />
-      )}
-      
-      {toastData && (
-        <Toast
-          type={toastData.type}
-          message={toastData.message}
-          duration={toastData.duration}
-          onClose={() => setToastData(null)}
-        />
       )}
     </div>
   )
