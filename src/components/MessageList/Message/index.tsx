@@ -28,6 +28,7 @@ export function Message({ message }: MessageProps) {
       else {
         switch (message.status) {
           case 'waiting':
+            styleType = 'waiting'
             content = '正在思考...'
             break
           case 'receiving':
@@ -38,6 +39,7 @@ export function Message({ message }: MessageProps) {
             content = `${content || ''}\n\n**发生错误** 😢\n\n\`\`\`\n${message.error || '未知错误'}\n\`\`\``.trim()
             break
           case 'aborted':
+            styleType = 'aborted'
             content = `${content || ''}\n\n**已中断请求** ⚠️`.trim()
             break
           case 'success':
@@ -53,8 +55,8 @@ export function Message({ message }: MessageProps) {
     return { formattedContent: content, messageStyleType: styleType }
   }, [message])
 
-  // 构建最终的className，保留原来的error类处理逻辑
-  const className = `message-item ${messageStyleType} ${message.status === 'error' ? 'error' : ''}`
+  // 构建最终的className，优化类名结构
+  const className = `message-item ${messageStyleType} ${message.status}`
 
   return (
     <div className={className}>

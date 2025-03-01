@@ -3,7 +3,7 @@
  * 代码高亮显示
  */
 
-import React from 'react'
+import React, { useState, useCallback } from 'react'
 import { Highlight } from 'prism-react-renderer'
 import { CodeProps } from '../../../../types/ui/props'
 import { draculaTheme } from './themes'
@@ -14,7 +14,7 @@ interface CodeBlockProps extends Omit<CodeProps, 'node'> {
 
 /**
  * 代码高亮组件
- * 支持内联代码和代码块样式
+ * 支持内联代码和代码块样式，增加复制功能
  */
 export function CodeBlock({ 
   inline, 
@@ -23,6 +23,22 @@ export function CodeBlock({
   language,
   ...props 
 }: CodeBlockProps) {
+  const [isCopied, setIsCopied] = useState(false)
+
+  // 复制代码到剪贴板
+  const copyToClipboard = useCallback(() => {
+    const content = String(children).replace(/\n$/, '')
+    navigator.clipboard.writeText(content).then(
+      () => {
+        setIsCopied(true)
+        setTimeout(() => setIsCopied(false), 2000)
+      },
+      () => {
+        console.error('复制失败')
+      }
+    )
+  }, [children])
+
   // 内联代码简单渲染
   if (inline) {
     return (
@@ -36,30 +52,44 @@ export function CodeBlock({
   const codeContent = String(children).replace(/\n$/, '')
   
   return (
-    <pre className="code-block-wrapper">
-      {language && (
-        <div className="code-block-header">
-          <span className="code-language">{language}</span>
+    <div className="code-block">
+      <div className="code-block-header">
+        <span className="code-language">{language || 'text'}</span>
+        <div className="code-actions">
+          <button 
+            className="copy-button" 
+            onClick={copyToClipboard}
+            aria-label="复制代码"
+          >
+            {isCopied ? (
+              <>
+                <span className="copy-success">已复制!</span>
+              </>
+            ) : (
+              <>复制</>
+            )}
+          </button>
         </div>
-      )}
+      </div>
       <Highlight
         theme={draculaTheme}
         code={codeContent}
         language={language || 'text'}
       >
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
-          <code className={className} style={style}>
+          <div className="code-content">
             {tokens.map((line, i) => (
-              <span key={i} {...getLineProps({ line })} className="code-line">
+              <div key={i} {...getLineProps({ line })}>
+                <span className="linenumber">{i + 1}</span>
                 {line.map((token, key) => (
                   <span key={key} {...getTokenProps({ token })} />
                 ))}
-              </span>
+              </div>
             ))}
-          </code>
+          </div>
         )}
       </Highlight>
-    </pre>
+    </div>
   )
 }
 

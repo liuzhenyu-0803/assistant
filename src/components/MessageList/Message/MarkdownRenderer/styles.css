@@ -1,6 +1,6 @@
 /**
  * MarkdownRenderer/styles.css
- * Markdown渲染样式
+ * Markdown渲染器样式
  * 
  * @lastModified 2025-03-01
  */
@@ -54,63 +54,174 @@
 }
 
 /* 代码块容器 */
-.code-block-wrapper {
+.code-block {
+  position: relative;
   margin: 1em 0;
-  border-radius: 6px;
+  background-color: #1e1e2e;
+  border-radius: 8px;
   overflow: hidden;
-  background: #282a36;
-  font-family: 'Fira Code', 'Consolas', monospace;
-  display: block;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* 代码块顶部 */
+/* 代码标题栏 */
 .code-block-header {
-  padding: 0.5em 1em;
-  background: #343746;
-  border-bottom: 1px solid #44475a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #2a2a42;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+  border-bottom: 1px solid #3a3a5a;
 }
 
 /* 语言标签 */
 .code-language {
-  font-size: 0.85em;
-  color: #bd93f9;
-  text-transform: uppercase;
+  font-weight: 600;
+  color: #9d85e9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* 代码行 */
-.code-line {
-  display: block;
+.code-language::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #9d85e9;
+  border-radius: 50%;
+}
+
+/* 操作按钮容器 */
+.code-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* 复制按钮 */
+.copy-button {
+  background: transparent;
+  border: none;
+  color: #9d85e9;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  background-color: rgba(157, 133, 233, 0.1);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+/* 复制成功提示 */
+.copy-success {
+  color: #10b981;
+}
+
+/* 代码内容容器 */
+.code-content {
+  padding: 16px;
   line-height: 1.5;
-}
-
-/* 预格式化文本 */
-.markdown-content pre {
-  margin: 0;
-  padding: 1em;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  tab-size: 2;
   overflow-x: auto;
-  font-family: 'Fira Code', 'Consolas', monospace;
 }
 
-/* 通用代码样式 */
-.markdown-content code {
-  font-size: 0.9em;
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
-  background: rgba(0, 0, 0, 0.1);
+/* 行号 */
+.code-content .linenumber {
+  color: #6c6c8a;
+  text-align: right;
+  padding-right: 12px;
+  user-select: none;
+  display: inline-block;
+  min-width: 30px;
 }
 
-/* 代码块内的代码样式 */
-.code-block-wrapper code {
-  padding: 1em;
-  display: block;
-  overflow-x: auto;
-  background: none;
+/* 语法高亮 */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6c6c8a;
 }
 
-/* 确保pre内的code没有额外样式 */
-.markdown-content pre code {
-  padding: 0;
-  background: none;
+.token.punctuation {
+  color: #c9c9d1;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #ff79c6;
+}
+
+.token.boolean,
+.token.number {
+  color: #bd93f9;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #50fa7b;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #f1fa8c;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #ff79c6;
+}
+
+.token.function,
+.token.class-name {
+  color: #8be9fd;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #f1fa8c;
+}
+
+/* 滚动条样式 */
+.code-content::-webkit-scrollbar {
+  height: 8px;
+  background-color: #1e1e2e;
+}
+
+.code-content::-webkit-scrollbar-thumb {
+  background-color: #3a3a5a;
+  border-radius: 4px;
+}
+
+.code-content::-webkit-scrollbar-thumb:hover {
+  background-color: #4a4a6a;
 }
 
 /* 表格样式 */
