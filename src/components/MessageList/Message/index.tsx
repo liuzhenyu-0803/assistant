@@ -4,11 +4,8 @@
  */
 
 import React from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Message as MessageType } from '../../types'
+import MarkdownRenderer from './MarkdownRenderer'
 import './styles.css'
 
 interface MessageProps {
@@ -54,28 +51,7 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     return (
       <div className={`message-item ${message.role} function-call`}>
         <div className="message-content">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code({ className, children }) {
-                const match = /language-(\w+)/.exec(className || '')
-                return match ? (
-                  <SyntaxHighlighter
-                    style={dracula}
-                    language={match[1]}
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                ) : (
-                  <code className={className}>
-                    {children}
-                  </code>
-                )
-              }
-            }}
-          >
-            {functionContent}
-          </ReactMarkdown>
+          <MarkdownRenderer content={functionContent} />
         </div>
       </div>
     )
@@ -91,28 +67,7 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
       return (
         <div className="message-item function-result">
           <div className="message-content">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                code({ className, children }) {
-                  const match = /language-(\w+)/.exec(className || '')
-                  return match ? (
-                    <SyntaxHighlighter
-                      style={dracula}
-                      language={match[1]}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <code className={className}>
-                      {children}
-                    </code>
-                  )
-                }
-              }}
-            >
-              {resultContent}
-            </ReactMarkdown>
+            <MarkdownRenderer content={resultContent} />
           </div>
         </div>
       )
@@ -126,28 +81,7 @@ export const Message: React.FC<MessageProps> = ({ message }) => {
     <div className={`message-item ${message.role} ${message.status === 'error' ? 'error' : ''}`}>
       <div className="message-content">
         {typeof displayContent === 'string' ? (
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code({ className, children }) {
-                const match = /language-(\w+)/.exec(className || '')
-                return match ? (
-                  <SyntaxHighlighter
-                    style={dracula}
-                    language={match[1]}
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                ) : (
-                  <code className={className}>
-                    {children}
-                  </code>
-                )
-              }
-            }}
-          >
-            {displayContent}
-          </ReactMarkdown>
+          <MarkdownRenderer content={displayContent} />
         ) : displayContent}
       </div>
     </div>

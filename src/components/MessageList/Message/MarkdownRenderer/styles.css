@@ -8,6 +8,7 @@
   margin: 0;
 }
 
+/* 标题样式 */
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3,
@@ -18,6 +19,7 @@
   font-weight: 600;
 }
 
+/* 列表样式 */
 .markdown-content ul,
 .markdown-content ol {
   margin: 0.5em 0;
@@ -40,12 +42,14 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+/* 代码块样式 */
 .code-block-wrapper {
   margin: 1em 0;
   border-radius: 6px;
   overflow: hidden;
   background: #282a36;
   font-family: 'Fira Code', 'Consolas', monospace;
+  display: block; /* 确保作为块级元素显示 */
 }
 
 .code-block-header {
@@ -60,6 +64,12 @@
   text-transform: uppercase;
 }
 
+/* 添加新的代码行样式 */
+.code-line {
+  display: block; /* 确保每行显示为块级元素 */
+  line-height: 1.5;
+}
+
 .markdown-content pre {
   margin: 0;
   padding: 1em;
@@ -67,11 +77,20 @@
   font-family: 'Fira Code', 'Consolas', monospace;
 }
 
+/* 代码样式 */
 .markdown-content code {
   font-size: 0.9em;
   padding: 0.2em 0.4em;
   border-radius: 3px;
   background: rgba(0, 0, 0, 0.1);
+}
+
+/* 修改嵌套在pre中的code样式 */
+.code-block-wrapper code {
+  padding: 1em;
+  display: block;
+  overflow-x: auto;
+  background: none;
 }
 
 .markdown-content pre code {

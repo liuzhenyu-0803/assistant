@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { MessageListProps } from '../../types'
-import { Message } from '../Message'
+import { Message } from './Message'
 import './styles.css'
 
 /**
