@@ -16,13 +16,13 @@ interface CodeBlockProps extends Omit<CodeProps, 'node'> {
  * 代码高亮组件
  * 支持内联代码和代码块样式
  */
-export const CodeBlock: React.FC<CodeBlockProps> = ({ 
+export function CodeBlock({ 
   inline, 
   className, 
   children, 
   language,
   ...props 
-}) => {
+}: CodeBlockProps) {
   // 内联代码简单渲染
   if (inline) {
     return (

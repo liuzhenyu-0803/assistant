@@ -12,55 +12,60 @@ interface MessageProps {
   message: MessageType
 }
 
-export const Message: React.FC<MessageProps> = ({ message }) => {
-  const { displayContent, messageType } = useMemo(() => {
+export function Message({ message }: MessageProps) {
+  const { formattedContent, messageStyleType } = useMemo(() => {
     let content = message.content
-    let type: string = message.role
+    let styleType: string = message.role
 
-    // 处理助手消息状态
+    // 处理assistant消息的不同情况
     if (message.role === 'assistant') {
-      if (message.status === 'waiting') {
-        content = '正在思考...'
-      } else if (message.status === 'error') {
-        type = 'error'
-        content = message.content 
-          ? `${message.content}\n\n**发生错误** 😢\n\n\`\`\`\n${message.error || '未知错误'}\n\`\`\``
-          : `**发生错误** 😢\n\n\`\`\`\n${message.error || '未知错误'}\n\`\`\``
-      } else if (message.status === 'aborted') {
-        content = message.content 
-          ? `${message.content}\n\n**已中断请求** ⚠️`
-          : '**已中断请求** ⚠️'
+      // 处理函数调用优先级高于其他状态
+      if (message.function_call) {
+        styleType = 'function-call'
+        content = `正在调用工具: ${message.function_call.name}`
+      } else {
+        // 处理不同消息状态
+        switch (message.status) {
+          case 'waiting':
+            content = '正在思考...'
+            break
+          case 'receiving':
+            styleType = 'receiving'
+            break
+          case 'error':
+            styleType = 'error'
+            content = `${content || ''}\n\n**发生错误** 😢\n\n\`\`\`\n${message.error || '未知错误'}\n\`\`\``.trim()
+            break
+          case 'aborted':
+            content = `${content || ''}\n\n**已中断请求** ⚠️`.trim()
+            break
+          case 'success':
+            // 如果内容为空，显示提示信息
+            if (!content || content.trim() === '') {
+              content = '*助手没有返回任何内容* 🤔'
+            }
+            break
+        }
       }
     }
-
-    // 处理函数调用
-    if (message.function_call) {
-      type = 'function-call'
-      content = `正在调用工具: ${message.function_call.name}`
+    
+    // 确保用户消息也不为空
+    if (message.role === 'user' && (!content || content.trim() === '')) {
+      content = '*空消息*'
     }
     
-    // 处理函数结果
-    if (message.role === 'function') {
-      type = 'function-result'
-      try {
-        const resultObject = JSON.parse(message.content)
-        content = `**函数执行结果:** \`${message.name}\`\n\n\`\`\`json\n${JSON.stringify(resultObject, null, 2)}\n\`\`\``
-      } catch (e) {
-        content = `**函数执行结果:** \`${message.name}\`\n\n${message.content}`
-      }
-    }
-    
-    return { displayContent: content, messageType: type }
+    return { formattedContent: content, messageStyleType: styleType }
   }, [message])
 
-  const className = `message-item ${messageType} ${message.status === 'error' ? 'error' : ''}`
+  // 构建最终的className
+  const className = `message-item ${messageStyleType} ${message.status === 'error' ? 'error' : ''}`
 
   return (
     <div className={className}>
       <div className="message-content">
-        {typeof displayContent === 'string' ? (
-          <MarkdownRenderer content={displayContent} />
-        ) : displayContent}
+        {typeof formattedContent === 'string' ? (
+          <MarkdownRenderer content={formattedContent} />
+        ) : formattedContent}
       </div>
     </div>
   )

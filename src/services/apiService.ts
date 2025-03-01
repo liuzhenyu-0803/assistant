@@ -104,8 +104,8 @@ export const getResponse = async ({
   // 创建一个新的对象用于API请求，确保类型兼容性
   const baseParams = {
     model,
-    // 过滤和转换消息，确保与OpenAI API兼容
-    messages: messages.filter(msg => msg.role !== 'function').map(msg => ({
+    // 转换消息，确保与OpenAI API兼容
+    messages: messages.map(msg => ({
       role: msg.role as 'user' | 'assistant' | 'system',
       content: msg.content,
       ...(msg.name ? { name: msg.name } : {}),

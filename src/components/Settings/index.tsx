@@ -60,7 +60,7 @@ const defaultState: SettingsState = {
   isOpen: false
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
+export function Settings({ onClose }: SettingsProps) {
   const [state, setState] = useState<SettingsState>(defaultState)
   
   // 更新本地状态

@@ -14,7 +14,7 @@ import './styles.css'
  * 将Markdown文本渲染为React组件
  * 支持GFM和代码高亮
  */
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <ReactMarkdown
       className="markdown-content"

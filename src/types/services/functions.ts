@@ -41,10 +41,3 @@ export interface ChatResponseMessage {
   content: string | null;
   function_call?: FunctionCall;
 }
-
-/** 函数调用结果消息 */
-export interface FunctionResultMessage {
-  role: 'function';
-  name: string;
-  content: string; // JSON 字符串
-}

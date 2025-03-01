@@ -6,7 +6,7 @@ import { FunctionCall } from '../services/functions'
 
 /** 基础消息接口 */
 export interface BaseMessage {
-  role: 'user' | 'assistant' | 'system' | 'function'
+  role: 'user' | 'assistant' | 'system'
   content: string
   name?: string
   function_call?: FunctionCall
@@ -14,7 +14,7 @@ export interface BaseMessage {
 
 /** 聊天消息接口 */
 export interface ChatMessage extends BaseMessage {
-  role: 'user' | 'assistant' | 'system' | 'function'
+  role: 'user' | 'assistant' | 'system'
   content: string
   name?: string
   function_call?: FunctionCall
@@ -22,7 +22,7 @@ export interface ChatMessage extends BaseMessage {
 
 /** API 响应消息 */
 export interface APIResponseMessage extends BaseMessage {
-  role: 'assistant' | 'user' | 'function'
+  role: 'assistant' | 'user'
   content: string
   timestamp?: number
   name?: string
@@ -32,7 +32,7 @@ export interface APIResponseMessage extends BaseMessage {
 /** UI 展示消息 */
 export interface Message extends BaseMessage {
   id: string
-  role: 'user' | 'assistant' | 'function'
+  role: 'user' | 'assistant'
   content: string
   timestamp: number
   status: MessageStatus

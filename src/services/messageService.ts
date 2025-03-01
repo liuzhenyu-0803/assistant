@@ -496,7 +496,7 @@ const updateClientMessage = (
  * 用于生成具有唯一ID和时间戳的消息
  * 
  * @param {string} content - 消息内容
- * @param {'user' | 'assistant' | 'function'} [role='user'] - 消息角色
+ * @param {'user' | 'assistant'} [role='user'] - 消息角色
  * @param {Object} [options] - 其他消息选项
  * @param {string} [options.name] - 函数消息的函数名
  * @param {FunctionCall} [options.function_call] - 函数调用信息
@@ -505,7 +505,7 @@ const updateClientMessage = (
  */
 export const createMessage = (
   content: string,
-  role: 'user' | 'assistant' | 'function' = 'user',
+  role: 'user' | 'assistant' = 'user',
   options?: {
     name?: string;
     function_call?: FunctionCall;
@@ -516,7 +516,7 @@ export const createMessage = (
   role,
   content,
   timestamp: Date.now(),
-  status: options?.status || 'waiting',
+  status: options?.status || (role === 'assistant' ? 'waiting' : 'success'),
   ...(options?.name ? { name: options.name } : {}),
   ...(options?.function_call ? { function_call: options.function_call } : {})
 });

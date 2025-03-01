@@ -1,9 +1,18 @@
+/**
+ * MarkdownRenderer/styles.css
+ * Markdown渲染样式
+ * 
+ * @lastModified 2025-03-01
+ */
+
+/* 基础容器样式 */
 .markdown-content {
   font-size: 16px;
   line-height: 1.6;
   color: inherit;
 }
 
+/* 段落样式 */
 .markdown-content p {
   margin: 0;
 }
@@ -26,6 +35,7 @@
   padding-left: 1.5em;
 }
 
+/* 链接样式 */
 .markdown-content a {
   color: #0066cc;
   text-decoration: none;
@@ -35,6 +45,7 @@
   text-decoration: underline;
 }
 
+/* 引用样式 */
 .markdown-content blockquote {
   margin: 0.5em 0;
   padding: 0.5em 1em;
@@ -42,34 +53,37 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-/* 代码块样式 */
+/* 代码块容器 */
 .code-block-wrapper {
   margin: 1em 0;
   border-radius: 6px;
   overflow: hidden;
   background: #282a36;
   font-family: 'Fira Code', 'Consolas', monospace;
-  display: block; /* 确保作为块级元素显示 */
+  display: block;
 }
 
+/* 代码块顶部 */
 .code-block-header {
   padding: 0.5em 1em;
   background: #343746;
   border-bottom: 1px solid #44475a;
 }
 
+/* 语言标签 */
 .code-language {
   font-size: 0.85em;
   color: #bd93f9;
   text-transform: uppercase;
 }
 
-/* 添加新的代码行样式 */
+/* 代码行 */
 .code-line {
-  display: block; /* 确保每行显示为块级元素 */
+  display: block;
   line-height: 1.5;
 }
 
+/* 预格式化文本 */
 .markdown-content pre {
   margin: 0;
   padding: 1em;
@@ -77,7 +91,7 @@
   font-family: 'Fira Code', 'Consolas', monospace;
 }
 
-/* 代码样式 */
+/* 通用代码样式 */
 .markdown-content code {
   font-size: 0.9em;
   padding: 0.2em 0.4em;
@@ -85,7 +99,7 @@
   background: rgba(0, 0, 0, 0.1);
 }
 
-/* 修改嵌套在pre中的code样式 */
+/* 代码块内的代码样式 */
 .code-block-wrapper code {
   padding: 1em;
   display: block;
@@ -93,6 +107,7 @@
   background: none;
 }
 
+/* 确保pre内的code没有额外样式 */
 .markdown-content pre code {
   padding: 0;
   background: none;
