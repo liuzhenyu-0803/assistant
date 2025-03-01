@@ -9,7 +9,7 @@
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { MarkdownRendererProps, CodeProps } from '../../../../types'
+import { MarkdownRendererProps } from '../../../../types/components/Renderers'
 import { CodeBlock } from './CodeBlock'
 import './styles.css'
 
@@ -23,18 +23,18 @@ function MarkdownRenderer({ content }: MarkdownRendererProps) {
       className="markdown-content"
       remarkPlugins={[remarkGfm]}
       components={{
-        code({ node, inline, className, children, ...props }: CodeProps) {
+        code({ node, inline, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '')
           const language = match ? match[1] : ''
           
           return (
             <CodeBlock
-              inline={inline}
+              inline={!!inline}
               className={className}
               language={language}
               {...props}
             >
-              {children}
+              {String(children).replace(/\n$/, '')}
             </CodeBlock>
           )
         }

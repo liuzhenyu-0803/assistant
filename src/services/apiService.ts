@@ -105,7 +105,7 @@ export const getResponse = async ({
       role: msg.role as 'user' | 'assistant' | 'system',
       content: msg.content,
       ...(msg.name ? { name: msg.name } : {}),
-      ...(msg.function_call ? { function_call: msg.function_call } : {})
+      ...(msg.functionCall ? { function_call: msg.functionCall } : {})
     })),
     temperature,
     max_tokens: maxTokens

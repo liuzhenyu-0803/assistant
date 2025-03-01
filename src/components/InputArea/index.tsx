@@ -4,7 +4,7 @@
  * 功能：文本输入、快捷键响应、发送控制
  */
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { InputAreaProps } from '../../types'
 import { cleanText, isEmptyText } from '../../utils/helpers'
 import './styles.css'
@@ -31,12 +31,24 @@ export function InputArea({
 
   const [message, setMessage] = useState<string>('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [prevDisabled, setPrevDisabled] = useState<boolean>(disabled || status === 'receiving' || status === 'waiting')
 
   // 状态计算
   const isReceiving = status === 'receiving' || status === 'waiting'
   const isOverLimit = message.length > maxLength
   const hasContent = !isEmptyText(message.trim())
   const canSend = hasContent && !isReceiving && !isOverLimit
+  
+  // 监听禁用状态变化，从禁用变为启用时自动聚焦
+  useEffect(() => {
+    const currentDisabled = disabled || isReceiving
+    // 如果之前是禁用状态，现在变成启用状态，则自动聚焦
+    if (prevDisabled && !currentDisabled) {
+      focusInput()
+    }
+    // 更新上一次的禁用状态
+    setPrevDisabled(currentDisabled)
+  }, [disabled, isReceiving])
 
   // 输入框内容变更
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -45,7 +57,12 @@ export function InputArea({
 
   // 恢复输入框焦点
   const focusInput = () => {
-    inputRef.current?.focus()
+    // 使用setTimeout确保DOM已完全更新
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, 0)
   }
 
   // 处理消息发送

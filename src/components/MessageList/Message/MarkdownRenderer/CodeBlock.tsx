@@ -8,12 +8,8 @@
 
 import React, { useState, useCallback } from 'react'
 import { Highlight } from 'prism-react-renderer'
-import { CodeProps } from '../../../../types/ui/props'
+import { CodeRendererProps } from '../../../../types/components/Renderers'
 import { draculaTheme } from './themes'
-
-interface CodeBlockProps extends Omit<CodeProps, 'node'> {
-  language: string
-}
 
 /**
  * 代码高亮组件
@@ -25,7 +21,7 @@ export function CodeBlock({
   children, 
   language,
   ...props 
-}: CodeBlockProps) {
+}: CodeRendererProps) {
   const [isCopied, setIsCopied] = useState(false)
 
   // 复制代码到剪贴板

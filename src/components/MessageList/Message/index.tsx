@@ -21,9 +21,9 @@ export function Message({ message }: MessageProps) {
     // 处理消息的不同状态和内容
     if (message.role === 'assistant') {
       // 1. 处理函数调用 - 优先级最高
-      if (message.function_call) {
+      if (message.functionCall) {
         styleType = 'function-call'
-        content = `正在调用工具: ${message.function_call.name}`
+        content = `正在调用工具: ${message.functionCall.name}`
       } 
       // 2. 处理消息状态
       else {
