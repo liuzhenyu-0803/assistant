@@ -4,7 +4,7 @@
  */
 
 import { exec } from 'child_process';
-import { PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../pluginInterface';
+import { PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../../types';
 import * as iconv from 'iconv-lite';
 
 /**

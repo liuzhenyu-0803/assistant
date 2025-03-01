@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import {PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../pluginInterface';
+import { PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../../types';
 
 /**
  * 文件工具插件类

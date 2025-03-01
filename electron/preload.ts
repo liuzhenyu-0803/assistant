@@ -13,10 +13,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron'
-import { ToolDefinition, ToolResult } from './plugins/pluginInterface'
-
-// 为了序列化传输，定义一个不含execute方法的工具定义类型
-type SerializableToolDefinition = Omit<ToolDefinition, 'execute'>;
+import { ToolResult, SerializableToolDefinition } from './types'
 
 /**
  * 向渲染进程暴露的API接口

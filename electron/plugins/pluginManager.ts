@@ -3,7 +3,7 @@
  * 负责加载、卸载和管理插件
  */
 
-import { Plugin, PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from './pluginInterface';
+import { Plugin, PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../types';
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';

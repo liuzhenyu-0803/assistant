@@ -547,7 +547,7 @@ const createSystemMessageForToolUsage = async (): Promise<ChatMessage> => {
 
   return {
     role: 'system',
-    content: `分析用户最新的消息，判断是否需要使用以下可用的工具获取信息或执行任务。
+    content: `分析用户消息，判断是否需要使用以下可用的工具获取信息或执行任务。
 
     ##工具所在的环境
     - 操作系统：Windows 10
