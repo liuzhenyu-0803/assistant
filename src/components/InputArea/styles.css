@@ -1,32 +1,6 @@
 /**
- * InputArea/styles.css
  * 输入区域样式定义
- * 
- * 设计规范：
- * 1. 布局
- *    - 弹性布局（Flex）实现垂直排列
- *    - 固定内边距和间距
- *    - 响应式高度调整
- * 
- * 2. 视觉效果
- *    - 半透明背景和边框
- *    - 聚焦时的高亮效果
- *    - 平滑过渡动画
- *    - 阴影效果增强层次感
- * 
- * 3. 交互反馈
- *    - 按钮悬停效果
- *    - 禁用状态样式
- *    - 字数超限警告
- * 
- * 4. 主题色系
- *    - 主色：#553c9a（深紫色）
- *    - 次色：#8b7dc7（浅紫色）
- *    - 文字：#fff（白色）
- *    - 透明度：0.3/0.45/0.7
- * 
- * @author AI助手开发团队
- * @lastModified 2025-02-19
+ * @lastModified 2025-03-01
  */
 
 /* 输入区容器 */
@@ -35,33 +9,26 @@
   background: transparent;
   box-sizing: border-box;
   position: relative;
-  /* 内边距：上12px 右12px 下8px 左12px */
   padding: 12px 12px 8px 12px;
-  /* 半透明边框 */
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  /* 垂直弹性布局 */
   display: flex;
   flex-direction: column;
   gap: 4px;
-  /* 阴影效果 */
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-  /* 过渡动画：所有属性 0.2秒 */
   transition: all 0.2s ease-in-out;
-  /* 左右外边距 */
-  /* margin: 0 16px; */
 }
 
 /* 输入区聚焦状态 */
 .input-area:focus-within {
-  border-color: #553c9a;  /* 主题色边框 */
-  box-shadow: 0 0 15px rgba(74, 59, 137, 0.3);  /* 扩大阴影效果 */
+  border-color: #553c9a;
+  box-shadow: 0 0 15px rgba(74, 59, 137, 0.3);
 }
 
 /* 文本编辑框 */
 .edit-box {
-  /* width: 100%; */
-  resize: none;  /* 禁用手动调整大小 */
+  width: 100%;
+  resize: none;
   border: none;
   outline: none;
   background: transparent;
@@ -69,10 +36,8 @@
   font-size: 14px;
   line-height: 1.5;
   padding: 0;
-  /* 高度限制 */
-  min-height: 48px;  /* 至少显示3行 */
-  /* max-height: 200px; */
-  /* caret-width: 2px;  光标宽度 */
+  min-height: 48px;
+  max-height: 200px;
 }
 
 /* 编辑框聚焦状态 */
@@ -94,7 +59,6 @@
 /* 工具栏容器 */
 .toolbar {
   height: 32px;
-  /* 两端对齐布局 */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -114,10 +78,10 @@
 
 /* 字数超限警告样式 */
 .char-count.over-limit {
-  color: #ff4d4f;  /* 错误红色 */
+  color: #ff4d4f;
 }
 
-/* 图标基础样式 - 从Icon组件迁移而来 */
+/* 图标基础样式 */
 .icon {
   width: 18px;
   height: 18px;
@@ -153,13 +117,6 @@
   flex-shrink: 0;
 }
 
-/* 发送/停止按钮容器 */
-.action-button-container {
-  width: 32px;
-  margin-left: 0px;
-  flex-shrink: 0;
-}
-
 .icon-button:hover {
   background: rgba(0, 0, 0, 0.05);
 }
@@ -181,7 +138,7 @@
   filter: invert(0.6);
 }
 
-/* 发送按钮特殊样式 */
+/* 发送按钮样式 */
 .send-button {
   background: transparent;
 }
@@ -198,7 +155,7 @@
   filter: invert(0.6);
 }
 
-/* 停止按钮特殊样式 */
+/* 停止按钮样式 */
 .stop-button {
   background: transparent;
 }
@@ -229,14 +186,4 @@
 
 .icon-button:disabled .icon {
   filter: invert(0.8) !important;
-}
-
-/* 响应式布局 */
-@media (max-width: 768px) {
-  .input-area {
-    margin: 8px;
-  }
-}
-
-@media (max-width: 480px) {
 }

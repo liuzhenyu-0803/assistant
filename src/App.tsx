@@ -147,7 +147,7 @@ function App() {
         onSendMessage={sendMessage}
         onClearConversation={clearConversation}
         onOpenSettings={openSettings}
-        status={chatStatus}
+        status={chatStatus} 
         onAbort={abortMessage}
       />
       
