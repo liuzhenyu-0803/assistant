@@ -1,6 +1,6 @@
 /**
- * Markdown渲染组件
- * 提供Markdown内容渲染、代码块高亮、GFM扩展支持
+ * MarkdownRenderer组件
+ * 提供Markdown渲染和代码高亮
  */
 
 import React from 'react'
@@ -10,7 +10,11 @@ import { MarkdownRendererProps, CodeProps } from '../../../../types'
 import { CodeBlock } from './CodeBlock'
 import './styles.css'
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+/**
+ * 将Markdown文本渲染为React组件
+ * 支持GFM和代码高亮
+ */
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
     <ReactMarkdown
       className="markdown-content"

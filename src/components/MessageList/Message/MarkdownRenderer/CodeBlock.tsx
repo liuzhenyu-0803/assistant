@@ -1,6 +1,6 @@
 /**
- * 代码块渲染组件
- * 提供代码语法高亮和语言标签显示
+ * CodeBlock组件
+ * 代码高亮显示
  */
 
 import React from 'react'
@@ -12,6 +12,10 @@ interface CodeBlockProps extends Omit<CodeProps, 'node'> {
   language: string
 }
 
+/**
+ * 代码高亮组件
+ * 支持内联代码和代码块样式
+ */
 export const CodeBlock: React.FC<CodeBlockProps> = ({ 
   inline, 
   className, 
@@ -19,24 +23,28 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   language,
   ...props 
 }) => {
-  // 内联代码处理
+  // 内联代码简单渲染
   if (inline) {
     return (
-      <code {...props} className={className}>
+      <code className={className} {...props}>
         {children}
       </code>
     )
   }
 
-  // 使用pre作为最外层元素，避免div嵌套在p标签内导致的DOM验证错误
+  // 代码块带语法高亮和语言标签
+  const codeContent = String(children).replace(/\n$/, '')
+  
   return (
     <pre className="code-block-wrapper">
-      <div className="code-block-header">
-        {language && <span className="code-language">{language}</span>}
-      </div>
+      {language && (
+        <div className="code-block-header">
+          <span className="code-language">{language}</span>
+        </div>
+      )}
       <Highlight
         theme={draculaTheme}
-        code={String(children).replace(/\n$/, '')}
+        code={codeContent}
         language={language || 'text'}
       >
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
