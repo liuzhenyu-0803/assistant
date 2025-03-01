@@ -4,7 +4,7 @@
  */
 
 import { exec } from 'child_process';
-import { PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../../types';
+import { PluginInfo, ToolPlugin, Tool, ToolResult } from '../../types';
 import * as iconv from 'iconv-lite';
 
 /**
@@ -41,7 +41,7 @@ class CommandToolPlugin implements ToolPlugin {
   /**
    * 获取此插件提供的所有工具
    */
-  public getTools(): ToolDefinition[] {
+  public getTools(): Tool[] {
     return [{
       name: 'execute_command',
       description: '执行系统命令行指令',

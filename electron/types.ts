@@ -51,30 +51,25 @@ export interface ToolPlugin extends Plugin {
   /**
    * 获取此插件提供的所有工具
    */
-  getTools(): ToolDefinition[];
+  getTools(): Tool[];
 }
 
 /**
- * 工具定义接口
- * 描述工具的基本信息和执行方法
+ * 简化后的工具接口
+ * 将工具定义和执行逻辑统一到一个接口中
  */
-export interface ToolDefinition {
+export interface Tool {
   name: string;
   description: string;
   parameters: ToolParameter[];
-  
-  /**
-   * 执行工具的方法
-   * @param params 工具参数
-   */
-  execute(params: any): Promise<ToolResult>;
+  execute(params: Record<string, any>): Promise<ToolResult>;
 }
 
 /**
  * 用于序列化传输的工具定义类型
  * 不包含execute方法
  */
-export type SerializableToolDefinition = Omit<ToolDefinition, 'execute'>;
+export type SerializableToolDefinition = Omit<Tool, 'execute'>;
 
 /**
  * 工具参数接口

@@ -2,7 +2,7 @@
  * 插件管理器
  */
 
-import { Plugin, PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../types';
+import { Plugin, PluginInfo, ToolPlugin, Tool, ToolResult, SerializableToolDefinition } from '../types';
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 class PluginManager {
   private static instance: PluginManager;
   private plugins: Map<string, Plugin> = new Map();
-  private toolDefinitions: Map<string, { plugin: ToolPlugin; tool: ToolDefinition }> = new Map();
+  private toolDefinitions: Map<string, { plugin: ToolPlugin; tool: Tool }> = new Map();
   private pluginsDirectory: string;
 
   private constructor() {
@@ -155,20 +155,16 @@ class PluginManager {
    */
   public async registerPlugin(plugin: Plugin): Promise<void> {
     try {
-      const info = plugin.getInfo();
-      
-      if (this.plugins.has(info.id)) {
-        console.warn(`Plugin ${info.id} already exists, cannot register again`);
-        return;
-      }
-      
       await plugin.initialize();
+      const info = plugin.getInfo();
       this.plugins.set(info.id, plugin);
       
       if (this.isToolPlugin(plugin)) {
-        const tools = plugin.getTools();
+        const toolPlugin = plugin as ToolPlugin;
+        const tools = toolPlugin.getTools();
+        
         for (const tool of tools) {
-          this.toolDefinitions.set(tool.name, { plugin: plugin, tool });
+          this.toolDefinitions.set(tool.name, { plugin: toolPlugin, tool });
         }
       }
       
@@ -227,7 +223,7 @@ class PluginManager {
   /**
    * 获取所有工具定义
    */
-  public getAllToolDefinitions(): Omit<ToolDefinition, 'execute'>[] {
+  public getAllToolDefinitions(): SerializableToolDefinition[] {
     return Array.from(this.toolDefinitions.values()).map(({ tool }) => {
       const { execute, ...toolWithoutExecute } = tool;
       return toolWithoutExecute;

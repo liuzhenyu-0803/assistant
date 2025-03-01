@@ -3,9 +3,9 @@
  * 提供文件操作相关的功能
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { PluginInfo, ToolPlugin, ToolDefinition, ToolResult } from '../../types';
+import fs from 'fs';
+import path from 'path';
+import { PluginInfo, ToolPlugin, Tool, ToolResult } from '../../types';
 
 /**
  * 文件工具插件类
@@ -41,7 +41,7 @@ class FileToolPlugin implements ToolPlugin {
   /**
    * 获取此插件提供的所有工具
    */
-  public getTools(): ToolDefinition[] {
+  public getTools(): Tool[] {
     return [
       {
         name: 'read_file',
@@ -69,7 +69,7 @@ class FileToolPlugin implements ToolPlugin {
           {
             name: 'content',
             type: 'string',
-            description: '要写入的内容',
+            description: '文件内容',
             required: true
           },
           {
