@@ -1,5 +1,9 @@
 /**
  * 消息相关的数据模型定义
+ * 
+ * 功能: 定义消息结构、状态和相关类型
+ * 
+ * @lastModified 2025-03-01
  */
 
 import { FunctionCall } from '../services/functions'

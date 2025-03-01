@@ -28,10 +28,10 @@
   word-break: break-word;
   position: relative;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  background-color: #2a2a2a;
-  border: 1px solid #333;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1),
-              0 2px 6px rgba(0, 0, 0, 0.08);
+  background-color: #232323; /* 将默认背景色调深 */
+  border: 1px solid #363636; /* 调整边框颜色 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15),
+              0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 /* 用户消息样式 */
@@ -45,6 +45,12 @@
 /* 助手消息样式 */
 .assistant .message-content {
   border-top-left-radius: 4px;
+  /* 添加与接收中状态相似的微妙紫色渐变效果 */
+  background-image: linear-gradient(
+    45deg, 
+    rgba(74, 59, 137, 0.03) 0%,
+    rgba(74, 59, 137, 0) 100%
+  );
 }
 
 .message-content::before {

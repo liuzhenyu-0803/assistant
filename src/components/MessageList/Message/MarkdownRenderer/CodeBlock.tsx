@@ -1,6 +1,9 @@
 /**
  * CodeBlock组件
- * 代码高亮显示
+ * 
+ * 功能: 代码高亮显示，支持代码复制
+ * 
+ * @lastModified 2025-03-01
  */
 
 import React, { useState, useCallback } from 'react'

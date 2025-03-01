@@ -1,3 +1,11 @@
+/**
+ * Toast组件
+ * 
+ * 功能: 显示临时性的通知消息
+ * 
+ * @lastModified 2025-03-01
+ */
+
 import { useEffect, useState } from 'react'
 import { ToastData } from '../../types'
 import './styles.css'

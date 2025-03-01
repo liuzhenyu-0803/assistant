@@ -1,6 +1,9 @@
 /**
  * 消息服务实现
- * 负责处理消息的发送、接收、流式传输和工具调用
+ * 
+ * 功能: 负责处理消息的发送、接收、流式传输和工具调用
+ * 
+ * @lastModified 2025-03-01
  */
 
 import { Message, ChatMessage, FunctionCall } from '../types'

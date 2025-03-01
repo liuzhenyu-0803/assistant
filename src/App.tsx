@@ -1,3 +1,11 @@
+/**
+ * App主组件
+ * 
+ * 功能: 应用程序的主要入口，管理消息状态、处理用户交互
+ * 
+ * @lastModified 2025-03-01
+ */
+
 import { useState, useEffect } from 'react'
 import { Message, ToastData, MessageStatus, FunctionCall } from './types'
 import { MessageList, InputArea, Settings, Toast } from './components'

@@ -1,6 +1,9 @@
 /**
  * MarkdownRenderer组件
- * 提供Markdown渲染和代码高亮
+ * 
+ * 功能: 提供Markdown渲染和代码高亮
+ * 
+ * @lastModified 2025-03-01
  */
 
 import React from 'react'
