@@ -1,14 +1,13 @@
 /**
- * 渲染器相关类型定义
+ * Markdown渲染器相关类型定义
  * 
- * 包含各种内容渲染组件的属性类型定义：
- * - Markdown内容渲染
+ * 包含Markdown内容渲染组件的属性类型定义：
+ * - Markdown文本渲染
  * - 代码块渲染
- * - 向后兼容类型别名
  * 
- * @module types/components/Renderers
+ * @module types/components/MarkdownRenderer
  * @version 1.0.0
- * @lastModified 2025-03-01
+ * @lastModified 2025-03-02
  */
 
 /**
@@ -95,13 +94,6 @@ export interface CodeRendererProps {
    */
   allowCopy?: boolean;
 }
-
-/**
- * 代码块组件类型别名
- * 为保持向后兼容性而保留
- * @deprecated 请使用 CodeRendererProps
- */
-export type CodeBlockProps = CodeRendererProps;
 
 /**
  * 注意：之前的 ImageRendererProps 接口已被移除

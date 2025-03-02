@@ -8,7 +8,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { Highlight } from 'prism-react-renderer'
-import { CodeRendererProps } from '../../../../types/components/Renderers'
+import { CodeRendererProps } from '../../../../types/components/MarkdownRenderer'
 import { draculaTheme } from './themes'
 
 /**

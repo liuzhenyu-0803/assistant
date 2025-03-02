@@ -7,8 +7,7 @@ import OpenAI from 'openai'
 import { 
   APIProvider, 
   ProviderConfig,
-  ChatCompletionParams,
-  ChatResponseMessage
+  ChatCompletionParams
 } from '../types'
 import { configService } from './configService'
 
@@ -75,9 +74,9 @@ export const getModelsList = async (): Promise<string[]> => {
  * @param {Function} [params.onChunk] - 流式响应的回调函数
  * @param {number} [params.temperature=0.7] - 温度参数，控制输出随机性
  * @param {number} [params.maxTokens=2000] - 最大生成token数
- * @returns {Promise<string|null|ChatResponseMessage>} 
+ * @returns {Promise<string|null>} 
  *   - 流式调用返回null
- *   - 非流式调用返回文本内容或包含函数调用信息的对象
+ *   - 非流式调用返回文本内容
  * @throws {Error} 当网络请求失败或被取消时抛出异常
  */
 export const getResponse = async ({
@@ -88,7 +87,7 @@ export const getResponse = async ({
   onChunk,
   temperature = 0.7,
   maxTokens = 2000
-}: ChatCompletionParams): Promise<string | null | ChatResponseMessage> => {
+}: ChatCompletionParams): Promise<string | null> => {
   
   const client = new OpenAI({
     baseURL: PROVIDER_CONFIGS[configService.getConfig().apiConfig.provider].endpoint,

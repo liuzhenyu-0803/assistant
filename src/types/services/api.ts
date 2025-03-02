@@ -9,11 +9,10 @@
  * 
  * @module types/services/api
  * @version 1.0.0
- * @lastModified 2025-03-01
+ * @lastModified 2025-03-02
  */
 
 import { ChatMessage } from './message'
-import { FunctionDefinition } from './functions'
 
 //======================================
 // API服务基础配置
@@ -133,71 +132,4 @@ export interface ChatCompletionParams {
    * 限制响应的最大长度
    */
   maxTokens?: number
-  
-  /**
-   * 可用工具/函数定义列表
-   * 提供给AI可以调用的函数
-   */
-  tools?: FunctionDefinition[]
-  
-  /**
-   * 函数调用策略
-   * - 'auto': 由AI决定是否调用函数
-   * - 'none': 禁止调用函数
-   * - {name: string}: 强制调用指定名称的函数
-   */
-  tool_choice?: 'auto' | 'none' | { name: string }
 }
-
-//======================================
-// API响应结构
-//======================================
-
-/**
- * API 响应接口
- * 定义API返回的响应结构
- */
-export interface APIResponse {
-  /**
-   * 选择结果数组
-   * 通常只包含一个元素，除非启用了多样化生成
-   */
-  choices: {
-    /**
-     * 完整消息
-     * 非流式响应中返回完整消息
-     */
-    message?: {
-      /** 回复角色，通常为'assistant' */
-      role: string
-      /** 生成的文本内容 */
-      content: string
-    }
-    
-    /**
-     * 增量内容
-     * 流式响应中返回的增量更新
-     */
-    delta?: {
-      /** 当前增量的文本内容 */
-      content: string
-    }
-  }[]
-  
-  /**
-   * 模型使用情况统计
-   * 提供token使用的详细信息
-   */
-  usage?: {
-    /** 输入消息消耗的token数量 */
-    prompt_tokens: number
-    /** 生成回复消耗的token数量 */
-    completion_tokens: number
-    /** 总消耗token数量 */
-    total_tokens: number
-  }
-}
-
-//======================================
-// API数据模型
-//======================================
