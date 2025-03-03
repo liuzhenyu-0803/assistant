@@ -118,24 +118,25 @@ function App() {
       // 1. 发送取消信号
       messageController.abort();
       
-      // 2. 添加视觉反馈，但保持状态
+      // 2. 添加视觉反馈，立即更新消息和状态
       setMessages(current => {
         const lastMessage = current[current.length - 1];
         if (lastMessage && lastMessage.role === 'assistant' && 
             (lastMessage.status === 'waiting' || lastMessage.status === 'receiving')) {
           return current.map(m => 
             m.id === lastMessage.id 
-              ? { ...m, content: m.content + '\n\n[正在终止请求...]' } 
+              ? { ...m, content: m.content + '\n\n[请求已终止]', status: 'aborted' } 
               : m
           );
         }
         return current;
       });
       
-      // 3. 不立即清除控制器引用，也不立即更新状态
-      // 让回调机制在底层请求真正终止后更新UI状态
-      // 在messageService的回调中会设置status: 'aborted'
-      // 并最终触发setChatStatus('idle')和setMessageController(null)
+      // 3. 立即将聊天状态更新为空闲状态，并清除控制器引用
+      setChatStatus('idle');
+      setMessageController(null);
+      
+      // 底层回调机制仍会执行，但UI状态已经更新，避免了等待
     }
   }
 

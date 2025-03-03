@@ -133,6 +133,9 @@ export function Settings({ onClose }: SettingsProps) {
           provider: prev.apiProvider,
           apiKeys: newApiKeys,
           selectedModels: prev.selectedModels
+        }).then(() => {
+          // 当API Key保存后也重新加载模型列表
+          loadModels();
         }).catch(error => {
           console.error('保存API Key失败:', error);
         });
@@ -140,7 +143,7 @@ export function Settings({ onClose }: SettingsProps) {
       
       return { ...prev, apiKeys: newApiKeys };
     });
-  }, [])
+  }, [loadModels])
 
   // 处理模型选择
   const handleModelChange = useCallback((option: { value: string, label: string } | null) => {
