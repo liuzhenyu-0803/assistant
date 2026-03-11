@@ -1,0 +1,76 @@
+.container {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: border-color 0.15s;
+}
+
+.inputRow:focus-within {
+  border-color: var(--border-light);
+}
+
+.button {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.sendButton {
+  background: var(--accent);
+  color: white;
+}
+
+.sendButton:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.sendButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stopButton {
+  background: var(--error);
+  color: white;
+}
+
+.stopButton:hover {
+  background: #d32f2f;
+}
+
+.attachButton {
+  background: none;
+  color: var(--text-secondary);
+}
+
+.attachButton:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.attachButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dragOver {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}

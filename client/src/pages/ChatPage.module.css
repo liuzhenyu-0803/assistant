@@ -1,0 +1,19 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+}
+
+.errorText {
+  color: var(--error);
+}

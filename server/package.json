@@ -1,0 +1,23 @@
+{
+  "name": "@assistant/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@assistant/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "express": "^4.21.0",
+    "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

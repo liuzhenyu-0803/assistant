@@ -1,0 +1,18 @@
+.wrapper {
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.wrapper:hover {
+  opacity: 0.85;
+}
+
+.thumbnail {
+  display: block;
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+}

@@ -1,0 +1,75 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.toolCall {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.toolCallIcon,
+.subAgentIcon {
+  flex-shrink: 0;
+}
+
+.toolCallName,
+.subAgentTask {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolCallStatus,
+.subAgentStatus {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+}
+
+.running { color: var(--warning); }
+.success { color: var(--success); }
+.failed  { color: var(--error); }
+.timeout { color: var(--error); }
+.cancelled { color: var(--text-secondary); }
+
+.subAgent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.statusRow {
+  display: flex;
+  margin-top: var(--spacing-xs);
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--text-primary);
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

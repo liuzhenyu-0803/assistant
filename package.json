@@ -1,0 +1,12 @@
+{
+  "name": "assistant",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:server": "pnpm --filter @assistant/server dev",
+    "dev:client": "pnpm --filter @assistant/client dev",
+    "build:shared": "pnpm --filter @assistant/shared build",
+    "build": "pnpm build:shared && pnpm --filter @assistant/client build",
+    "start": "pnpm --filter @assistant/server start"
+  }
+}

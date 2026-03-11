@@ -1,0 +1,18 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.content {
+  width: 100%;
+  max-width: 640px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
