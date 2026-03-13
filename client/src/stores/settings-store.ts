@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Settings } from '@assistant/shared';
+import type { Settings, ModelProvider, ModelConfig } from '@assistant/shared';
 import { fetchSettings, saveSettings } from '../services/settings-api';
 
 interface SettingsStore {
@@ -11,11 +11,37 @@ interface SettingsStore {
   save: (settings: Settings) => Promise<void>;
 }
 
-const DEFAULT_SETTINGS: Settings = {
-  baseURL: '',
+const DEFAULT_MODEL_PROVIDERS: ModelProvider[] = [
+  {
+    name: 'DashScope',
+    baseURL: 'https://coding.dashscope.aliyuncs.com/v1',
+    apiKey: '',
+    models: ['qwen3.5-plus', 'qwen-max'],
+  },
+  {
+    name: 'OpenRouter',
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: '',
+    models: ['google/gemini-2.5-flash-preview-05-20', 'google/gemini-2.5-pro-preview', 'anthropic/claude-sonnet-4'],
+  },
+  {
+    name: 'AiHubMix',
+    baseURL: 'https://aihubmix.com/v1',
+    apiKey: '',
+    models: ['gpt-4.1-mini', 'gpt-4.1'],
+  },
+];
+
+const DEFAULT_MODEL_CONFIG: ModelConfig = {
+  providerName: 'DashScope',
   apiKey: '',
-  model: '',
-  contextWindowSize: 128000,
+  model: 'qwen3.5-plus',
+};
+
+export const DEFAULT_SETTINGS: Settings = {
+  modelProviders: [...DEFAULT_MODEL_PROVIDERS],
+  modelConfigs: [{ ...DEFAULT_MODEL_CONFIG }],
+  activeModelConfigId: 'default',
 };
 
 export const useSettingsStore = create<SettingsStore>((set) => ({

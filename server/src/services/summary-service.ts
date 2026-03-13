@@ -57,8 +57,7 @@ function renderMessages(messages: Message[]): string {
 }
 
 async function getContextWindowSize(): Promise<number> {
-  const settings = await settingsService.getSettings();
-  return Math.max(1, settings.contextWindowSize);
+  return 128000;
 }
 
 function getTriggerTokenLimit(contextWindowSize: number): number {

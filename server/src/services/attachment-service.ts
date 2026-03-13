@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createAttachmentId } from '@assistant/shared';
 import type { AttachmentRef } from '@assistant/shared';
-import { attachmentsDir, conversationFile } from '../storage/paths.js';
+import { CONVERSATIONS_DIR, attachmentsDir, conversationFile } from '../storage/paths.js';
 import { jsonStore } from '../storage/json-store.js';
 import type { ConversationData } from '../storage/conversation-store.js';
 import { AppError } from '../utils/errors.js';
@@ -27,6 +27,16 @@ async function writeStaging(
 function getExtension(originalName: string): string {
   const ext = path.extname(originalName);
   return ext || '';
+}
+
+const orphanCleanupTimers = new Map<string, NodeJS.Timeout>();
+
+function cancelScheduledCleanup(conversationId: string): void {
+  const timer = orphanCleanupTimers.get(conversationId);
+  if (timer) {
+    clearTimeout(timer);
+    orphanCleanupTimers.delete(conversationId);
+  }
 }
 
 export const attachmentService = {
@@ -80,23 +90,25 @@ export const attachmentService = {
       }
     }
 
-    // 从暂存元数据中移除
+    // 从暂存元数据中校验并移除
     const staging = await readStaging(conversationId);
+    const stagedAttachment = staging[attachmentId];
+    if (!stagedAttachment) {
+      throw new AppError('NOT_FOUND', '附件不存在或已删除');
+    }
+
     delete staging[attachmentId];
     await writeStaging(conversationId, staging);
 
-    // 查找并删除文件
-    const attDir = attachmentsDir(conversationId);
+    // 按 staging 记录的文件名精确删除文件
+    const filePath = path.join(attachmentsDir(conversationId), stagedAttachment.filename);
     try {
-      const files = await fs.promises.readdir(attDir);
-      const idPart = attachmentId.replace('att_', '');
-      const target = files.find((f) => f.startsWith(idPart));
-      if (target) {
-        await fs.promises.unlink(path.join(attDir, target));
-        logger.info(`Deleted attachment: ${attachmentId}`);
+      await fs.promises.unlink(filePath);
+      logger.info(`Deleted attachment: ${attachmentId}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
       }
-    } catch {
-      // Directory may not exist
     }
   },
 
@@ -135,17 +147,17 @@ export const attachmentService = {
 
   /** 清理会话中未绑定消息的暂存附件 */
   async cleanOrphanAttachments(conversationId: string): Promise<void> {
+    cancelScheduledCleanup(conversationId);
     const attDir = attachmentsDir(conversationId);
     try {
       await fs.promises.access(attDir);
     } catch {
-      return; // 无附件目录
+      return;
     }
 
     const conv = await jsonStore.read<ConversationData>(conversationFile(conversationId));
     if (!conv) return;
 
-    // 收集所有被消息引用的文件名
     const referencedFiles = new Set<string>();
     for (const msg of conv.messages) {
       for (const content of msg.content) {
@@ -155,7 +167,6 @@ export const attachmentService = {
       }
     }
 
-    // 删除未被引用的文件（跳过 _staging.json）
     const files = await fs.promises.readdir(attDir);
     for (const file of files) {
       if (file === '_staging.json') continue;
@@ -164,12 +175,43 @@ export const attachmentService = {
           await fs.promises.unlink(path.join(attDir, file));
           logger.info(`Cleaned orphan attachment: ${file} in conversation ${conversationId}`);
         } catch {
-          // 继续清理其他文件
+          // ignore and continue
         }
       }
     }
 
-    // 清空暂存元数据
     await writeStaging(conversationId, {});
+  },
+
+  async cleanAllOrphanAttachments(): Promise<void> {
+    const entries = await fs.promises.readdir(CONVERSATIONS_DIR, { withFileTypes: true }).catch(() => []);
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) {
+        continue;
+      }
+
+      try {
+        await this.cleanOrphanAttachments(entry.name);
+      } catch (error) {
+        logger.warn(`Failed to clean orphan attachments for conversation ${entry.name}: ${String(error)}`);
+      }
+    }
+  },
+
+  scheduleOrphanCleanup(conversationId: string): void {
+    cancelScheduledCleanup(conversationId);
+    orphanCleanupTimers.set(
+      conversationId,
+      setTimeout(() => {
+        void this.cleanOrphanAttachments(conversationId).catch((error: unknown) => {
+          logger.warn(`Scheduled orphan cleanup failed for ${conversationId}: ${String(error)}`);
+        });
+      }, 5 * 60 * 1000),
+    );
+  },
+
+  cancelOrphanCleanup(conversationId: string): void {
+    cancelScheduledCleanup(conversationId);
   },
 };

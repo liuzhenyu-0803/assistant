@@ -19,8 +19,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     try {
       const errorBody = await response.json();
-      if (errorBody.code) code = errorBody.code;
-      if (errorBody.message) message = errorBody.message;
+      const error = errorBody.error ?? errorBody;
+      if (error.code) code = error.code;
+      if (error.message) message = error.message;
     } catch {
       // ignore JSON parse errors on error responses
     }
@@ -78,8 +79,9 @@ export async function apiDelete(url: string): Promise<void> {
 
     try {
       const errorBody = await response.json();
-      if (errorBody.code) code = errorBody.code;
-      if (errorBody.message) message = errorBody.message;
+      const error = errorBody.error ?? errorBody;
+      if (error.code) code = error.code;
+      if (error.message) message = error.message;
     } catch {
       // ignore JSON parse errors on error responses
     }

@@ -73,6 +73,14 @@ export interface UploadAttachmentResponse extends AttachmentRef {}
 export type SettingsResponse = Settings;
 export type UpdateSettingsRequest = Settings;
 
+export interface SubAgentConfigTextResponse {
+  content: string;
+}
+
+export interface UpdateSubAgentConfigTextRequest {
+  content: string;
+}
+
 // --- MCP API ---
 
 export interface MCPServerWithStatus extends MCPServerConfig {
@@ -82,6 +90,14 @@ export interface MCPServerWithStatus extends MCPServerConfig {
 
 export interface UpdateMCPServersRequest {
   servers: MCPServerConfig[];
+}
+
+export interface MCPConfigTextResponse {
+  content: string;
+}
+
+export interface UpdateMCPConfigTextRequest {
+  content: string;
 }
 
 export interface MCPToolInfo {
@@ -106,6 +122,7 @@ export interface StopResponse {
 
 export interface SSERunStartEvent {
   runId: string;
+  /** 流式 assistant 占位消息的 ID */
   messageId: string;
 }
 
@@ -124,6 +141,14 @@ export interface SSEErrorEvent {
 
 export interface SSETextDeltaEvent {
   delta: string;
+}
+
+export interface SSEReasoningDeltaEvent {
+  delta: string;
+}
+
+export interface SSEReasoningEndEvent {
+  status: 'completed';
 }
 
 export interface SSEToolCallStartEvent {
@@ -186,6 +211,8 @@ export type SSEEventType =
   | 'done'
   | 'error'
   | 'text-delta'
+  | 'reasoning-delta'
+  | 'reasoning-end'
   | 'tool-call-start'
   | 'tool-call-end'
   | 'tool-call-error'

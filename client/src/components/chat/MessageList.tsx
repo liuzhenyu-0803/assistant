@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { Message, ToolCallRecord } from '@assistant/shared';
+import type { Message, MessageStatus, ToolCallRecord, SubAgentRecord } from '@assistant/shared';
 import { MessageItem } from './MessageItem';
 import styles from './MessageList.module.css';
 
@@ -7,15 +7,28 @@ interface MessageListProps {
   messages: Message[];
   streamingMessageId: string | null;
   streamingContent: string;
+  streamingReasoning?: string;
+  streamingReasoningStatus: MessageStatus | 'streaming';
+  reasoningByMessageId: Record<string, { text: string; status: MessageStatus }>;
   streamingToolCalls?: ToolCallRecord[];
+  streamingSubAgents?: SubAgentRecord[];
 }
 
-export function MessageList({ messages, streamingMessageId, streamingContent, streamingToolCalls }: MessageListProps) {
+export function MessageList({
+  messages,
+  streamingMessageId,
+  streamingContent,
+  streamingReasoning,
+  streamingReasoningStatus,
+  reasoningByMessageId,
+  streamingToolCalls,
+  streamingSubAgents,
+}: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, streamingContent, streamingToolCalls?.length]);
+  }, [messages.length, streamingContent, streamingReasoning, streamingToolCalls?.length, streamingSubAgents?.length]);
 
   if (messages.length === 0 && !streamingMessageId) {
     return (
@@ -28,7 +41,12 @@ export function MessageList({ messages, streamingMessageId, streamingContent, st
   return (
     <div className={styles.list}>
       {messages.map((msg) => (
-        <MessageItem key={msg.id} message={msg} />
+        <MessageItem
+          key={msg.id}
+          message={msg}
+          streamingReasoning={reasoningByMessageId[msg.id]?.text}
+          reasoningStatus={reasoningByMessageId[msg.id]?.status}
+        />
       ))}
 
       {/* 流式中的助手消息 */}
@@ -43,7 +61,10 @@ export function MessageList({ messages, streamingMessageId, streamingContent, st
             createdAt: new Date().toISOString(),
           }}
           streamingContent={streamingContent}
+          streamingReasoning={streamingReasoning}
+          reasoningStatus={streamingReasoningStatus}
           streamingToolCalls={streamingToolCalls}
+          streamingSubAgents={streamingSubAgents}
         />
       )}
 

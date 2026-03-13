@@ -57,6 +57,26 @@ async function readConfigs(): Promise<MCPServerConfig[]> {
   return (await jsonStore.read<MCPServerConfig[]>(MCP_SERVERS_FILE)) ?? [];
 }
 
+function formatConfigText(configs: MCPServerConfig[]): string {
+  return `${JSON.stringify(configs, null, 2)}\n`;
+}
+
+function parseConfigText(content: string): MCPServerConfig[] {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new AppError('INVALID_REQUEST', 'MCP config must be valid JSON');
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new AppError('INVALID_REQUEST', 'MCP config must be an array');
+  }
+
+  return parsed as MCPServerConfig[];
+}
+
 function mapStatuses(configs: MCPServerConfig[]): MCPServerWithStatus[] {
   const runtimeStatusMap = new Map(
     mcpManager.getServerStatuses().map((entry) => [
@@ -85,6 +105,11 @@ export const mcpService = {
     return readConfigs();
   },
 
+  async getServerConfigText(): Promise<string> {
+    const configs = await readConfigs();
+    return formatConfigText(configs);
+  },
+
   async getServerConfigsWithStatus(): Promise<MCPServerWithStatus[]> {
     const configs = await readConfigs();
     return mapStatuses(configs);
@@ -97,7 +122,17 @@ export const mcpService = {
     return mapStatuses(normalizedConfigs);
   },
 
+  async updateServerConfigText(content: string): Promise<string> {
+    const configs = parseConfigText(content);
+    await this.updateServerConfigs(configs);
+    return this.getServerConfigText();
+  },
+
   getAllTools(): MCPToolInfo[] {
     return mcpManager.getAllTools();
+  },
+
+  async closeAll(): Promise<void> {
+    await mcpManager.closeAll();
   },
 };

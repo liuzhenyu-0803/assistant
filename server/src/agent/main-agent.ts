@@ -1,5 +1,12 @@
+import fs from 'node:fs';
 import type { Response } from 'express';
-import type { ConversationDetail, Message, MessageContent, ToolCallRecord } from '@assistant/shared';
+import type {
+  ConversationDetail,
+  Message,
+  MessageContent,
+  ToolCallRecord,
+  MCPToolInfo,
+} from '@assistant/shared';
 import { createToolCallId } from '@assistant/shared';
 import { modelClient } from './model-client.js';
 import { buildSystemPrompt } from './system-prompt.js';
@@ -10,6 +17,13 @@ import { convertMCPToolsToOpenAI } from '../mcp/tool-converter.js';
 import { skillLoader } from '../skills/skill-loader.js';
 import { AppError } from '../utils/errors.js';
 import { getMessagesAfterSummary, summaryService } from '../services/summary-service.js';
+import { attachmentService } from '../services/attachment-service.js';
+import { subAgentService } from '../services/sub-agent-service.js';
+import {
+  convertSubAgentToolsToOpenAI,
+  createSubAgentToolDefinitions,
+  executeSubAgentTool,
+} from './sub-agent-orchestrator.js';
 import type { ModelMessage, ModelToolCall } from './model-client.js';
 
 export interface SSEWriter {
@@ -30,14 +44,64 @@ function createSSEWriter(res: Response): SSEWriter {
   };
 }
 
-function buildModelMessages(context: PreparedConversationContext): ModelMessage[] {
+function buildUserMessageContent(
+  conversationId: string,
+  message: Message,
+): string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> {
+  const parts: Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = [];
+  const nonImageAttachments: string[] = [];
+
+  for (const content of message.content) {
+    if (content.type === 'text') {
+      parts.push({ type: 'text', text: content.text });
+      continue;
+    }
+
+    if (content.type !== 'attachment') {
+      continue;
+    }
+
+    if (content.attachment.mimeType.startsWith('image/')) {
+      const filePath = attachmentService.getAttachmentPath(conversationId, content.attachment.filename);
+      const mimeType = content.attachment.mimeType || 'image/png';
+      const base64 = fs.readFileSync(filePath).toString('base64');
+      parts.push({
+        type: 'image_url',
+        image_url: { url: `data:${mimeType};base64,${base64}` },
+      });
+      parts.push({ type: 'text', text: `[图片附件: ${content.attachment.originalName}]` });
+    } else {
+      nonImageAttachments.push(
+        `${content.attachment.originalName}（路径: ${attachmentService.getAttachmentPath(conversationId, content.attachment.filename)}）`,
+      );
+    }
+  }
+
+  if (nonImageAttachments.length > 0) {
+    parts.push({
+      type: 'text',
+      text: `以下为非图片附件，不能直接作为模型输入；如需读取请使用可用工具：\n- ${nonImageAttachments.join('\n- ')}`,
+    });
+  }
+
+  if (parts.length === 1 && parts[0].type === 'text') {
+    return parts[0].text || '(empty)';
+  }
+
+  return parts.length > 0 ? parts : '(empty)';
+}
+
+function buildModelMessages(
+  context: PreparedConversationContext,
+  conversationId: string,
+  tools: MCPToolInfo[],
+): ModelMessage[] {
   const messages: ModelMessage[] = [];
-  const allTools = mcpManager.getAllTools();
   const allSkills = skillLoader.getAllSkillMetas();
 
   messages.push({
     role: 'system',
-    content: buildSystemPrompt(allTools, allSkills),
+    content: buildSystemPrompt(tools, allSkills),
   });
 
   if (context.summary) {
@@ -59,7 +123,7 @@ function buildModelMessages(context: PreparedConversationContext): ModelMessage[
         }
       }
 
-      messages.push({ role: 'user', content: textParts.join('\n') || '(empty)' });
+      messages.push({ role: 'user', content: buildUserMessageContent(conversationId, message) });
       continue;
     }
 
@@ -184,9 +248,24 @@ export async function runMainAgent(
   void runId;
 
   const preparedContext = await prepareConversationContext(conversation, res, abortSignal);
-  const messages = buildModelMessages(preparedContext);
   const mcpTools = mcpManager.getAllTools();
-  const openAITools = convertMCPToolsToOpenAI(mcpTools);
+  const subAgentConfigs = await subAgentService.getEnabledSubAgents();
+  const subAgentTools = createSubAgentToolDefinitions(subAgentConfigs);
+  const allPromptTools: MCPToolInfo[] = [
+    ...mcpTools,
+    ...subAgentTools.map((tool) => ({
+      serverId: 'internal-subagent',
+      serverName: '内部子代理',
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+    })),
+  ];
+  const messages = buildModelMessages(preparedContext, conversation.id, allPromptTools);
+  const openAITools = [
+    ...convertMCPToolsToOpenAI(mcpTools),
+    ...convertSubAgentToolsToOpenAI(subAgentTools),
+  ];
 
   const accumulatedContent: MessageContent[] = [];
   let textBuffer = '';
@@ -221,6 +300,10 @@ export async function runMainAgent(
           textBuffer += event.delta;
           iterationHasText = true;
           sendSSEEvent(res, 'text-delta', { delta: event.delta });
+        } else if (event.type === 'reasoning-delta') {
+          sendSSEEvent(res, 'reasoning-delta', { delta: event.delta });
+        } else if (event.type === 'reasoning-end') {
+          sendSSEEvent(res, 'reasoning-end', { status: 'completed' });
         } else if (event.type === 'tool-call-delta') {
           iterationToolCalls.set(String(event.toolCall.index), event.toolCall);
         } else if (event.type === 'finish') {
@@ -294,7 +377,10 @@ export async function runMainAgent(
           break;
         }
 
-        const serverId = mcpTools.find((entry) => entry.name === toolCall.name)?.serverId ?? '';
+        const matchedSubAgentTool = subAgentTools.find((entry) => entry.name === toolCall.name);
+        const serverId = matchedSubAgentTool
+          ? 'internal-subagent'
+          : mcpTools.find((entry) => entry.name === toolCall.name)?.serverId ?? '';
 
         const toolCallRecord: ToolCallRecord = {
           id: toolCall.id,
@@ -312,7 +398,26 @@ export async function runMainAgent(
         });
 
         try {
-          const result = await mcpManager.callTool(toolCall.name, toolCall.args, abortSignal);
+          let result: string;
+
+          if (matchedSubAgentTool) {
+            const subAgentResult = await executeSubAgentTool(
+              matchedSubAgentTool.subAgent,
+              {
+                task:
+                  typeof toolCall.args.task === 'string'
+                    ? toolCall.args.task
+                    : JSON.stringify(toolCall.args, null, 2),
+                context: typeof toolCall.args.context === 'string' ? toolCall.args.context : undefined,
+              },
+              res,
+              abortSignal,
+            );
+            result = subAgentResult.toolResult;
+            accumulatedContent.push({ type: 'sub-agent', subAgent: subAgentResult.record });
+          } else {
+            result = await mcpManager.callTool(toolCall.name, toolCall.args, abortSignal);
+          }
 
           toolCallRecord.status = 'success';
           toolCallRecord.result = result;

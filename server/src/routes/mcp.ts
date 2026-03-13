@@ -1,6 +1,10 @@
 ﻿import { Router } from 'express';
 import type { Router as ExpressRouter } from 'express';
-import type { MCPServerConfig, UpdateMCPServersRequest } from '@assistant/shared';
+import type {
+  MCPServerConfig,
+  UpdateMCPConfigTextRequest,
+  UpdateMCPServersRequest,
+} from '@assistant/shared';
 import { mcpService } from '../services/mcp-service.js';
 import { AppError } from '../utils/errors.js';
 
@@ -15,6 +19,15 @@ router.get('/servers', async (_req, res, next) => {
   }
 });
 
+router.get('/config', async (_req, res, next) => {
+  try {
+    const content = await mcpService.getServerConfigText();
+    res.json({ data: { content } });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.put('/servers', async (req, res, next) => {
   try {
     const body = req.body as Partial<UpdateMCPServersRequest>;
@@ -24,6 +37,20 @@ router.put('/servers', async (req, res, next) => {
 
     const servers = await mcpService.updateServerConfigs(body.servers as MCPServerConfig[]);
     res.json({ data: servers });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/config', async (req, res, next) => {
+  try {
+    const body = req.body as Partial<UpdateMCPConfigTextRequest>;
+    if (!body || typeof body.content !== 'string') {
+      throw new AppError('INVALID_REQUEST', 'content must be a string');
+    }
+
+    const content = await mcpService.updateServerConfigText(body.content);
+    res.json({ data: { content } });
   } catch (error) {
     next(error);
   }

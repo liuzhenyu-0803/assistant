@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import type { Router as ExpressRouter } from 'express';
-import type { SendMessageRequest } from '@assistant/shared';
+import type { MessageContent, SendMessageRequest } from '@assistant/shared';
 import { createMessageId } from '@assistant/shared';
 import { conversationService } from '../services/conversation-service.js';
 import { runService } from '../services/run-service.js';
 import { settingsService } from '../services/settings-service.js';
 import { runMainAgent } from '../agent/main-agent.js';
+import { attachmentService } from '../services/attachment-service.js';
 import { setupSSEResponse, sendSSEEvent, startPingInterval } from '../utils/sse.js';
 import { AppError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
@@ -47,10 +48,11 @@ router.post('/', async (req, res, next) => {
       body.content,
       body.revision,
     );
+    attachmentService.cancelOrphanCleanup(conversationId);
 
     // 启动 Run
-    const messageId = createMessageId();
-    const run = runService.startRun(conversationId, messageId);
+    const assistantMessageId = createMessageId();
+    const run = runService.startRun(conversationId, assistantMessageId);
 
     // 切换为 SSE 模式
     setupSSEResponse(res);
@@ -61,16 +63,16 @@ router.post('/', async (req, res, next) => {
       if (runService.hasActiveRun(conversationId)) {
         logger.info(`Client disconnected, stopping run ${run.runId}`);
         runService.stopRun(conversationId);
+        attachmentService.scheduleOrphanCleanup(conversationId);
       }
     });
 
     // 发送 run-start 事件
-    sendSSEEvent(res, 'run-start', { runId: run.runId, messageId: userMessage.id });
+    sendSSEEvent(res, 'run-start', { runId: run.runId, messageId: assistantMessageId });
 
     // 获取最新会话（含新加入的用户消息）
     const conversation = await conversationService.getConversation(conversationId);
 
-    const assistantMessageId = createMessageId();
     const assistantCreatedAt = new Date().toISOString();
     let finalStatus: 'completed' | 'interrupted' = 'completed';
     let assistantContent: import('@assistant/shared').MessageContent[] = [];
@@ -81,6 +83,29 @@ router.post('/', async (req, res, next) => {
     } catch (agentError) {
       stopPing();
       const errorMessage = agentError instanceof Error ? agentError.message : '未知错误';
+      const failureMessage: MessageContent = {
+        type: 'text',
+        text: `生成失败：${errorMessage}`,
+      };
+      const failedContent = [...assistantContent, failureMessage];
+
+      runService.completeRun(run.runId, 'failed');
+
+      let savedRevision = conversation.revision;
+      try {
+        await conversationService.addAssistantMessage(conversationId, {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: failedContent,
+          status: 'failed',
+          runId: run.runId,
+          createdAt: assistantCreatedAt,
+        });
+        const afterSave = await conversationService.getConversation(conversationId);
+        savedRevision = afterSave.revision;
+      } catch (saveErr) {
+        logger.error('Failed to save failed assistant message:', saveErr);
+      }
 
       // 如果是配置不完整错误
       if (agentError instanceof AppError && agentError.code === 'CONFIG_INCOMPLETE') {
@@ -88,33 +113,15 @@ router.post('/', async (req, res, next) => {
           runId: run.runId,
           code: 'CONFIG_INCOMPLETE',
           message: errorMessage,
-          revision: conversation.revision + 1,
+          revision: savedRevision,
         });
       } else {
         sendSSEEvent(res, 'error', {
           runId: run.runId,
           code: 'INTERNAL_ERROR',
           message: errorMessage,
-          revision: conversation.revision + 1,
+          revision: savedRevision,
         });
-      }
-
-      runService.completeRun(run.runId, 'failed');
-
-      // 持久化失败的助手消息（若有部分内容）
-      if (assistantContent.length > 0) {
-        try {
-          await conversationService.addAssistantMessage(conversationId, {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: assistantContent,
-            status: 'failed',
-            runId: run.runId,
-            createdAt: assistantCreatedAt,
-          });
-        } catch (saveErr) {
-          logger.error('Failed to save failed assistant message:', saveErr);
-        }
       }
 
       res.end();

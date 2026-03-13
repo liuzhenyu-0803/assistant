@@ -51,6 +51,8 @@ export type ModelMessage =
 
 export type ModelStreamEvent =
   | { type: 'text-delta'; delta: string }
+  | { type: 'reasoning-delta'; delta: string }
+  | { type: 'reasoning-end' }
   | { type: 'tool-call-delta'; toolCall: ModelToolCall }
   | { type: 'finish'; reason: ModelFinishReason };
 
@@ -68,6 +70,9 @@ interface OpenAIStreamChunk {
   choices?: Array<{
     delta?: {
       content?: string | null;
+      reasoning?: string | null;
+      reasoning_content?: string | null;
+      thinking?: string | null;
       tool_calls?: OpenAIToolCallDelta[];
     };
     finish_reason?: string | null;
@@ -102,7 +107,14 @@ export const modelClient = {
       throw new AppError('CONFIG_INCOMPLETE', validationError);
     }
 
-    const endpoint = buildChatCompletionsUrl(settings.baseURL);
+    const activeConfig = settingsService.getActiveModelConfig(settings);
+    const activeProvider = settingsService.getActiveProvider(settings);
+
+    if (!activeConfig || !activeProvider) {
+      throw new AppError('CONFIG_INCOMPLETE', '当前使用的模型配置不存在');
+    }
+
+    const endpoint = buildChatCompletionsUrl(activeProvider.baseURL);
     const requestSignal = createRequestSignal(abortSignal, DEFAULT_REQUEST_TIMEOUT_MS);
 
     try {
@@ -111,10 +123,10 @@ export const modelClient = {
         headers: {
           'Content-Type': 'application/json',
           Accept: 'text/event-stream',
-          Authorization: `Bearer ${settings.apiKey}`,
+          Authorization: `Bearer ${activeConfig.apiKey || activeProvider.apiKey || ''}`,
         },
         body: JSON.stringify({
-          model: settings.model,
+          model: activeConfig.model,
           stream: true,
           messages,
           ...(tools && tools.length > 0 ? { tools } : {}),
@@ -292,13 +304,26 @@ function* parseChunkEvents(
     throw new Error(`模型返回错误：${chunk.error.message}`);
   }
 
+  let emittedReasoningInChunk = false;
+  let emittedTextInChunk = false;
+
   for (const choice of chunk.choices ?? []) {
     const delta = choice.delta;
 
     if (typeof delta?.content === 'string' && delta.content.length > 0) {
+      emittedTextInChunk = true;
       yield {
         type: 'text-delta',
         delta: delta.content,
+      };
+    }
+
+    const reasoningDelta = extractReasoningDelta(delta);
+    if (reasoningDelta) {
+      emittedReasoningInChunk = true;
+      yield {
+        type: 'reasoning-delta',
+        delta: reasoningDelta,
       };
     }
 
@@ -336,6 +361,35 @@ function* parseChunkEvents(
       };
     }
   }
+
+  if (emittedReasoningInChunk && !emittedTextInChunk) {
+    yield { type: 'reasoning-end' };
+  }
+}
+
+function extractReasoningDelta(
+  delta:
+    | {
+        content?: string | null;
+        reasoning?: string | null;
+        reasoning_content?: string | null;
+        thinking?: string | null;
+        tool_calls?: OpenAIToolCallDelta[];
+      }
+    | undefined,
+): string {
+  if (!delta) {
+    return '';
+  }
+
+  const candidates = [delta.reasoning, delta.reasoning_content, delta.thinking];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return '';
 }
 
 async function createResponseError(response: Response): Promise<Error> {

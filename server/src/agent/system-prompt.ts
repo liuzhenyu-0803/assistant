@@ -18,6 +18,7 @@ export function buildSystemPrompt(tools?: MCPToolInfo[], skills?: SkillMeta[]): 
 - 遇到不确定的内容，诚实说明
 - 使用工具前先确认是否必要
 - 当用户任务明显匹配某个 Skill 时，优先参考对应 Skill 的摘要信息
+- 当存在适合拆分的内部子代理工具时，可将专项任务委派给对应子代理处理
 - 保持回复简洁、准确
 
 ## 格式

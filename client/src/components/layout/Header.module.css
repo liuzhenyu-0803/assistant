@@ -22,18 +22,20 @@
   gap: var(--spacing-sm);
 }
 
-.settingsLink {
+.settingsButton {
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  text-decoration: none;
+  background: transparent;
+  border: none;
   padding: var(--spacing-xs);
   border-radius: var(--radius-sm);
+  cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
 
-.settingsLink:hover {
+.settingsButton:hover {
   color: var(--text-primary);
   background: var(--bg-tertiary);
 }

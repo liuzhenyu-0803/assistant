@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Router as ExpressRouter } from 'express';
 import { conversationService } from '../services/conversation-service.js';
+import { AppError } from '../utils/errors.js';
 
 const router: ExpressRouter = Router();
 
@@ -29,6 +30,25 @@ router.get('/:id', async (req, res, next) => {
   try {
     const conversation = await conversationService.getConversation(req.params.id);
     res.json({ data: conversation });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/conversations/:id/fork — 分叉会话
+router.post('/:id/fork', async (req, res, next) => {
+  try {
+    const { upToMessageId, revision } = req.body as { upToMessageId?: string; revision?: number };
+
+    if (!upToMessageId || typeof upToMessageId !== 'string') {
+      throw new AppError('INVALID_REQUEST', 'upToMessageId 字段必须为字符串');
+    }
+    if (typeof revision !== 'number') {
+      throw new AppError('INVALID_REQUEST', 'revision 字段必须为数字');
+    }
+
+    const conversation = await conversationService.forkConversation(req.params.id, upToMessageId, revision);
+    res.status(201).json({ data: conversation });
   } catch (err) {
     next(err);
   }

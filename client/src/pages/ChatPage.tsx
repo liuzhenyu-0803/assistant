@@ -1,31 +1,43 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useChatStore } from '../stores/chat-store';
 import { useAttachmentStore } from '../stores/attachment-store';
 import { MessageList } from '../components/chat/MessageList';
 import { ChatInput } from '../components/input/ChatInput';
 import { useSSEStream } from '../hooks/useSSEStream';
 import { sendMessage, stopRun } from '../services/message-api';
+import { useConversationStore } from '../stores/conversation-store';
 import { showToast } from '../components/common/Toast';
 import type {
   SSERunStartEvent,
   SSETextDeltaEvent,
+  SSEReasoningDeltaEvent,
+  SSEReasoningEndEvent,
   SSEDoneEvent,
   SSEErrorEvent,
   SSEToolCallStartEvent,
   SSEToolCallEndEvent,
   SSEToolCallErrorEvent,
+  SSESubAgentStartEvent,
+  SSESubAgentDeltaEvent,
+  SSESubAgentEndEvent,
+  SSESubAgentErrorEvent,
 } from '@assistant/shared';
 import styles from './ChatPage.module.css';
 
 export function ChatPage() {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const {
     messages,
     revision,
     streamingMessageId,
     streamingContent,
+    streamingReasoning,
+    streamingReasoningStatus,
+    reasoningByMessageId,
     streamingToolCalls,
+    streamingSubAgents,
     isStreaming,
     loading,
     error,
@@ -33,15 +45,22 @@ export function ChatPage() {
     reset,
     beginStreaming,
     appendStreamingDelta,
+    appendStreamingReasoning,
+    endStreamingReasoning,
     startStreamingToolCall,
     endStreamingToolCall,
     errorStreamingToolCall,
+    startStreamingSubAgent,
+    appendStreamingSubAgentDelta,
+    endStreamingSubAgent,
+    errorStreamingSubAgent,
     commitStreaming,
     appendUserMessage,
     updateRevision,
   } = useChatStore();
 
   const { setConversationId, pendingAttachments, getAttachmentIds, clearAll } = useAttachmentStore();
+  const forkConversation = useConversationStore((state) => state.fork);
 
   const [inputText, setInputText] = useState('');
   const { connect, disconnect } = useSSEStream();
@@ -65,8 +84,7 @@ export function ChatPage() {
 
     const text = inputText.trim();
     const attachmentIds = getAttachmentIds();
-    setInputText('');
-    clearAll();
+    const pendingAttachmentSnapshot = [...pendingAttachments];
 
     // 构造请求 content
     const content: Array<{ type: 'text'; text: string } | { type: 'attachment'; attachmentId: string }> = [];
@@ -74,30 +92,6 @@ export function ChatPage() {
       content.push({ type: 'attachment', attachmentId: aid });
     }
     if (text) content.push({ type: 'text', text });
-
-    // 乐观更新 UI（附件显示简化版）
-    appendUserMessage({
-      id: `user_${Date.now()}`,
-      role: 'user',
-      content: content.map((c) =>
-        c.type === 'text'
-          ? { type: 'text', text: c.text }
-          : {
-              type: 'attachment',
-              attachment: pendingAttachments.find((a) => a.id === c.attachmentId) ?? {
-                id: c.attachmentId,
-                filename: '',
-                originalName: '',
-                mimeType: 'application/octet-stream',
-                size: 0,
-                status: 'staged' as const,
-                createdAt: new Date().toISOString(),
-              },
-            },
-      ),
-      status: 'completed',
-      createdAt: new Date().toISOString(),
-    });
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -117,7 +111,21 @@ export function ChatPage() {
         }
 
         if (code === 'CONFLICT') {
-          showToast('会话已在其他标签页更新，请刷新后重试', 'error');
+          const lastMessage = messages[messages.length - 1];
+          if (!lastMessage) {
+            showToast('会话已在其他标签页更新，请刷新后重试', 'error');
+            return;
+          }
+
+          try {
+            const forked = await forkConversation(id, lastMessage.id, revision);
+            navigate(`/chat/${forked.id}`);
+            setConversationId(forked.id);
+            setInputText(text);
+            showToast('会话已被其他标签页更新，已自动创建分支会话', 'success');
+          } catch {
+            showToast('会话已在其他标签页更新，请刷新后重试', 'error');
+          }
         } else if (code === 'RUN_ACTIVE') {
           showToast('当前会话正在生成中，请等待完成', 'error');
         } else if (code === 'CONFIG_INCOMPLETE') {
@@ -127,6 +135,32 @@ export function ChatPage() {
         }
         return;
       }
+
+      // 请求被接受后再做乐观更新和清空草稿
+      appendUserMessage({
+        id: `user_${Date.now()}`,
+        role: 'user',
+        content: content.map((c) =>
+          c.type === 'text'
+            ? { type: 'text', text: c.text }
+            : {
+                type: 'attachment',
+                attachment: pendingAttachmentSnapshot.find((a) => a.id === c.attachmentId) ?? {
+                  id: c.attachmentId,
+                  filename: '',
+                  originalName: '',
+                  mimeType: 'application/octet-stream',
+                  size: 0,
+                  status: 'staged' as const,
+                  createdAt: new Date().toISOString(),
+                },
+              },
+        ),
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+      });
+      setInputText('');
+      clearAll();
 
       connect(
         response,
@@ -139,6 +173,12 @@ export function ChatPage() {
           } else if (eventType === 'text-delta') {
             const evt = data as SSETextDeltaEvent;
             appendStreamingDelta(evt.delta);
+          } else if (eventType === 'reasoning-delta') {
+            const evt = data as SSEReasoningDeltaEvent;
+            appendStreamingReasoning(evt.delta);
+          } else if (eventType === 'reasoning-end') {
+            const _evt = data as SSEReasoningEndEvent;
+            endStreamingReasoning();
           } else if (eventType === 'tool-call-start') {
             const evt = data as SSEToolCallStartEvent;
             startStreamingToolCall(evt.toolCallId, evt.toolName, evt.arguments);
@@ -148,6 +188,18 @@ export function ChatPage() {
           } else if (eventType === 'tool-call-error') {
             const evt = data as SSEToolCallErrorEvent;
             errorStreamingToolCall(evt.toolCallId, evt.error);
+          } else if (eventType === 'sub-agent-start') {
+            const evt = data as SSESubAgentStartEvent;
+            startStreamingSubAgent(evt.subAgentId, evt.task);
+          } else if (eventType === 'sub-agent-delta') {
+            const evt = data as SSESubAgentDeltaEvent;
+            appendStreamingSubAgentDelta(evt.subAgentId, evt.delta);
+          } else if (eventType === 'sub-agent-end') {
+            const evt = data as SSESubAgentEndEvent;
+            endStreamingSubAgent(evt.subAgentId, evt.summary, evt.detail);
+          } else if (eventType === 'sub-agent-error') {
+            const evt = data as SSESubAgentErrorEvent;
+            errorStreamingSubAgent(evt.subAgentId, evt.error);
           } else if (eventType === 'done') {
             const evt = data as SSEDoneEvent;
             commitStreaming(evt.status === 'completed' ? 'completed' : 'interrupted');
@@ -167,7 +219,7 @@ export function ChatPage() {
       if ((err as Error)?.name === 'AbortError') return;
       showToast(err instanceof Error ? err.message : '发送失败', 'error');
     }
-  }, [id, inputText, pendingAttachments, revision, isStreaming, appendUserMessage, beginStreaming, appendStreamingDelta, startStreamingToolCall, endStreamingToolCall, errorStreamingToolCall, commitStreaming, updateRevision, connect, getAttachmentIds, clearAll]);
+  }, [id, navigate, messages, inputText, pendingAttachments, revision, isStreaming, appendUserMessage, beginStreaming, appendStreamingDelta, appendStreamingReasoning, endStreamingReasoning, startStreamingToolCall, endStreamingToolCall, errorStreamingToolCall, startStreamingSubAgent, appendStreamingSubAgentDelta, endStreamingSubAgent, errorStreamingSubAgent, commitStreaming, updateRevision, connect, getAttachmentIds, clearAll, setConversationId, forkConversation]);
 
   const handleStop = useCallback(async () => {
     if (!id) return;
@@ -209,7 +261,11 @@ export function ChatPage() {
         messages={messages}
         streamingMessageId={streamingMessageId}
         streamingContent={streamingContent}
+        streamingReasoning={streamingReasoning}
+        streamingReasoningStatus={streamingReasoningStatus}
+        reasoningByMessageId={reasoningByMessageId}
         streamingToolCalls={Object.values(streamingToolCalls)}
+        streamingSubAgents={Object.values(streamingSubAgents)}
       />
       <ChatInput
         value={inputText}

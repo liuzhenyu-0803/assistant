@@ -1,17 +1,84 @@
+import fs from 'node:fs';
 import type {
+  AttachmentRef,
   ConversationListItem,
   ConversationDetail,
+  Fork,
   Message,
   MessageContent,
   SendMessageContent,
 } from '@assistant/shared';
-import { createConversationId, createMessageId, generateTitle } from '@assistant/shared';
+import { createConversationId, createMessageId, generateForkTitle, generateTitle } from '@assistant/shared';
 import { conversationStore } from '../storage/conversation-store.js';
 import type { ConversationData } from '../storage/conversation-store.js';
+import { attachmentsDir } from '../storage/paths.js';
 import { attachmentService } from './attachment-service.js';
 import { runService } from './run-service.js';
 import { AppError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+
+async function cloneAttachmentRef(
+  sourceConversationId: string,
+  targetConversationId: string,
+  attachment: AttachmentRef,
+): Promise<AttachmentRef> {
+  const sourcePath = attachmentService.getAttachmentPath(sourceConversationId, attachment.filename);
+  const targetDir = attachmentsDir(targetConversationId);
+  const targetPath = attachmentService.getAttachmentPath(targetConversationId, attachment.filename);
+
+  await fs.promises.mkdir(targetDir, { recursive: true });
+  await fs.promises.copyFile(sourcePath, targetPath);
+
+  return {
+    ...attachment,
+    status: 'attached',
+  };
+}
+
+async function copyConversationAttachments(
+  sourceConversationId: string,
+  targetConversationId: string,
+  sourceMessages: Message[],
+): Promise<Map<string, AttachmentRef>> {
+  const copied = new Map<string, AttachmentRef>();
+
+  for (const message of sourceMessages) {
+    for (const content of message.content) {
+      if (content.type !== 'attachment' || copied.has(content.attachment.id)) {
+        continue;
+      }
+
+      copied.set(
+        content.attachment.id,
+        await cloneAttachmentRef(sourceConversationId, targetConversationId, content.attachment),
+      );
+    }
+  }
+
+  return copied;
+}
+
+function cloneMessageWithNewIds(
+  message: Message,
+  copiedAttachments: Map<string, AttachmentRef>,
+): Message {
+  const content: MessageContent[] = message.content.map((item) => {
+    if (item.type !== 'attachment') {
+      return item;
+    }
+
+    return {
+      type: 'attachment',
+      attachment: copiedAttachments.get(item.attachment.id) ?? item.attachment,
+    };
+  });
+
+  return {
+    ...message,
+    id: createMessageId(),
+    content,
+  };
+}
 
 export const conversationService = {
   /** 获取会话列表（含 revision 和 fork，从完整会话文件补充） */
@@ -198,5 +265,52 @@ export const conversationService = {
     logger.info(`Added assistant message ${message.id} to conversation ${id} (status=${message.status})`);
 
     return message;
+  },
+
+  async forkConversation(id: string, upToMessageId: string, revision: number): Promise<ConversationDetail> {
+    const sourceConversation = await conversationStore.getConversation(id);
+    if (!sourceConversation) {
+      throw new AppError('NOT_FOUND', '会话不存在');
+    }
+
+    if (sourceConversation.revision !== revision) {
+      throw new AppError('CONFLICT', `会话 revision 冲突：期望 ${sourceConversation.revision}，收到 ${revision}`);
+    }
+
+    const messageIndex = sourceConversation.messages.findIndex((message) => message.id === upToMessageId);
+    if (messageIndex < 0) {
+      throw new AppError('NOT_FOUND', '分叉消息不存在');
+    }
+
+    const sourceMessages = sourceConversation.messages.slice(0, messageIndex + 1);
+    const now = new Date().toISOString();
+    const forkId = createConversationId();
+    const forkMeta: Fork = {
+      sourceConversationId: sourceConversation.id,
+      sourceMessageId: upToMessageId,
+      sourceRevision: sourceConversation.revision,
+    };
+
+    const copiedAttachments = await copyConversationAttachments(sourceConversation.id, forkId, sourceMessages);
+    const clonedMessages = sourceMessages.map((message) => cloneMessageWithNewIds(message, copiedAttachments));
+    const lastMessageAt = clonedMessages.length > 0 ? clonedMessages[clonedMessages.length - 1].createdAt : null;
+
+    const forkConversation: ConversationData = {
+      id: forkId,
+      title: generateForkTitle(sourceConversation.title || '新对话'),
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+      lastMessageAt,
+      messageCount: clonedMessages.length,
+      fork: forkMeta,
+      summary: null,
+      messages: clonedMessages,
+    };
+
+    await conversationStore.saveConversation(forkConversation);
+    logger.info(`Forked conversation ${id} -> ${forkId} up to message ${upToMessageId}`);
+
+    return forkConversation;
   },
 };

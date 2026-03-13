@@ -1,6 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+function isFileNotFoundError(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
+}
+
+async function readAndParseJson<T>(filePath: string): Promise<T> {
+  const content = await fs.promises.readFile(filePath, 'utf-8');
+  return JSON.parse(content) as T;
+}
+
 /**
  * 原子 JSON 文件读写。
  *
@@ -28,12 +37,14 @@ export const jsonStore = {
       await fd.close();
     }
 
-    // 2. 若目标文件已存在，复制为 .bak
+    // 2. 生成 .bak：已有主文件时备份主文件；首次写入时备份 tmp 内容
     try {
-      await fs.promises.access(filePath);
       await fs.promises.copyFile(filePath, bakPath);
-    } catch {
-      // 目标文件不存在，跳过备份
+    } catch (error) {
+      if (!isFileNotFoundError(error)) {
+        throw error;
+      }
+      await fs.promises.copyFile(tmpPath, bakPath);
     }
 
     // 3. 原子 rename
@@ -44,28 +55,26 @@ export const jsonStore = {
    * 读取 JSON 文件，主文件损坏时自动从 .bak 恢复。
    */
   async read<T>(filePath: string): Promise<T | null> {
-    // 尝试读取主文件
     try {
-      const content = await fs.promises.readFile(filePath, 'utf-8');
-      return JSON.parse(content) as T;
-    } catch {
-      // 主文件不存在或损坏
+      return await readAndParseJson<T>(filePath);
+    } catch (mainError) {
+      if (isFileNotFoundError(mainError)) {
+        return null;
+      }
+
+      const bakPath = filePath + '.bak';
+      try {
+        const data = await readAndParseJson<T>(bakPath);
+        await fs.promises.copyFile(bakPath, filePath);
+        return data;
+      } catch (bakError) {
+        if (isFileNotFoundError(bakError)) {
+          throw new Error(`JSON 文件损坏且缺少备份：${filePath}`);
+        }
+
+        throw new Error(`JSON 文件与备份文件均已损坏：${filePath}`);
+      }
     }
-
-    // 尝试从 .bak 恢复
-    const bakPath = filePath + '.bak';
-    try {
-      const content = await fs.promises.readFile(bakPath, 'utf-8');
-      const data = JSON.parse(content) as T;
-
-      // 恢复成功，将 .bak 复制回主文件
-      await fs.promises.copyFile(bakPath, filePath);
-      return data;
-    } catch {
-      // .bak 也不存在或损坏
-    }
-
-    return null;
   },
 
   /**

@@ -8,6 +8,8 @@ export const DATA_DIR = path.join(PROJECT_ROOT, 'data');
 export const CONVERSATIONS_DIR = path.join(DATA_DIR, 'conversations');
 export const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 export const MCP_SERVERS_FILE = path.join(DATA_DIR, 'mcp-servers.json');
+export const MODEL_PROVIDERS_FILE = path.join(DATA_DIR, 'model-providers.json');
+export const SUB_AGENTS_FILE = path.join(DATA_DIR, 'sub-agents.json');
 export const CONVERSATIONS_INDEX_FILE = path.join(CONVERSATIONS_DIR, 'index.json');
 export const SKILLS_DIR = path.join(PROJECT_ROOT, 'skills');
 

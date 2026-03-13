@@ -11,8 +11,8 @@ export type {
 } from './types/message.js';
 export type { AttachmentRef, AttachmentStatus } from './types/attachment.js';
 export type { ToolCallRecord } from './types/tool-call.js';
-export type { SubAgentRecord } from './types/sub-agent.js';
-export type { Settings } from './types/settings.js';
+export type { SubAgentRecord, SubAgentConfig, SubAgentConfigFile, SubAgentToolArgs } from './types/sub-agent.js';
+export type { Settings, ModelConfig, ModelProvider } from './types/settings.js';
 export type { MCPServerConfig } from './types/mcp.js';
 export type { SkillMeta } from './types/skill.js';
 export type {
@@ -28,8 +28,12 @@ export type {
   UploadAttachmentResponse,
   SettingsResponse,
   UpdateSettingsRequest,
+  SubAgentConfigTextResponse,
+  UpdateSubAgentConfigTextRequest,
   MCPServerWithStatus,
   UpdateMCPServersRequest,
+  MCPConfigTextResponse,
+  UpdateMCPConfigTextRequest,
   MCPToolInfo,
   SkillListItem,
   StopResponse,
@@ -37,6 +41,8 @@ export type {
   SSEDoneEvent,
   SSEErrorEvent,
   SSETextDeltaEvent,
+  SSEReasoningDeltaEvent,
+  SSEReasoningEndEvent,
   SSEToolCallStartEvent,
   SSEToolCallEndEvent,
   SSEToolCallErrorEvent,
